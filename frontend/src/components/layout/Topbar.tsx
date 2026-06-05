@@ -28,15 +28,7 @@ export function Topbar() {
     <nav className="h-[72px] w-full bg-[var(--color-panel)] border-b border-[var(--color-border)] sticky top-0 z-50 flex items-center justify-between px-4 md:px-8">
       {/* Logo Area */}
       <Link href="/" className="flex items-center gap-3 group">
-        <div className="w-6 h-6 flex flex-col justify-between">
-          <div className="h-[4px] w-full bg-[#ffa116]"></div>
-          <div className="h-[4px] w-full bg-[#ffa116] flex gap-1">
-            <div className="h-full w-1/2 bg-transparent"></div>
-            <div className="h-full w-1/2 bg-[#ffc01e]"></div>
-          </div>
-          <div className="h-[4px] w-3/4 bg-[#ffa116]"></div>
-        </div>
-        <span className="text-[var(--color-text-primary)] font-bold text-xl tracking-tight hidden sm:block">CP Aggregator</span>
+        <span className="text-[var(--color-text-primary)] font-bold text-xl tracking-tight hidden sm:block">CP Times</span>
       </Link>
 
       {/* Center Links */}
