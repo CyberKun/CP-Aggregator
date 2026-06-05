@@ -9,11 +9,12 @@ import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 
 export function Topbar() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -66,11 +67,41 @@ export function Topbar() {
         )}
         
         {isAuthenticated ? (
-          <Link href="/profile" className="w-9 h-9 rounded-full bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors text-[var(--color-text-primary)]">
-            <span className="font-bold text-sm">
-              {user?.username?.charAt(0).toUpperCase() || 'U'}
-            </span>
-          </Link>
+          <div className="relative">
+            <button 
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              onBlur={() => setTimeout(() => setIsProfileDropdownOpen(false), 200)}
+              className="w-9 h-9 rounded-full bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-text-secondary)]"
+            >
+              <span className="font-bold text-sm">
+                {user?.username?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            </button>
+
+            {/* Dropdown */}
+            {isProfileDropdownOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-2 border-b border-[var(--color-border)]">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{user?.username}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{user?.email}</p>
+                </div>
+                <div className="py-1">
+                  <Link href="/profile" className="block px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-primary)]">
+                    Profile
+                  </Link>
+                  <button 
+                    onClick={() => {
+                      logout();
+                      setIsProfileDropdownOpen(false);
+                    }} 
+                    className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-red-400 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <Link href="/login" className="w-9 h-9 rounded-full bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors text-[var(--color-text-secondary)]">
             <User className="w-4 h-4" />

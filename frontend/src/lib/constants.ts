@@ -6,9 +6,9 @@ export const PLATFORMS: PlatformInfo[] = [
   {
     key: 'CODEFORCES',
     name: 'Codeforces',
-    color: '#22c55e', // Green
+    color: '#1F8ACB', // Official Blue
     icon: 'Code2',
-    gradient: 'from-green-400 to-green-600',
+    gradient: 'from-blue-400 to-blue-600',
   },
   {
     key: 'LEETCODE',
