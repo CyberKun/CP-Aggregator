@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { Sun, Moon, User } from 'lucide-react';
+import { Sun, Moon, User, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -13,6 +13,7 @@ export function Topbar() {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -24,7 +25,7 @@ export function Topbar() {
   ];
 
   return (
-    <nav className="h-[72px] w-full bg-[var(--color-panel)] border-b border-[var(--color-border)] sticky top-0 z-50 flex items-center justify-between px-8">
+    <nav className="h-[72px] w-full bg-[var(--color-panel)] border-b border-[var(--color-border)] sticky top-0 z-50 flex items-center justify-between px-4 md:px-8">
       {/* Logo Area */}
       <Link href="/" className="flex items-center gap-3 group">
         <div className="w-6 h-6 flex flex-col justify-between">
@@ -35,7 +36,7 @@ export function Topbar() {
           </div>
           <div className="h-[4px] w-3/4 bg-[#ffa116]"></div>
         </div>
-        <span className="text-[var(--color-text-primary)] font-bold text-xl tracking-tight">CP Aggregator</span>
+        <span className="text-[var(--color-text-primary)] font-bold text-xl tracking-tight hidden sm:block">CP Aggregator</span>
       </Link>
 
       {/* Center Links */}
@@ -61,7 +62,7 @@ export function Topbar() {
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {mounted && (
           <button 
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
@@ -83,7 +84,38 @@ export function Topbar() {
             <User className="w-4 h-4" />
           </Link>
         )}
+
+        <button
+          className="md:hidden p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="absolute top-[72px] left-0 w-full bg-[var(--color-panel)] border-b border-[var(--color-border)] flex flex-col md:hidden shadow-lg">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.path;
+            return (
+              <Link
+                key={link.name}
+                href={link.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  "p-4 border-b border-[var(--color-border)] text-base font-medium transition-colors",
+                  isActive 
+                    ? "text-[var(--color-text-primary)] bg-[var(--color-elevated)]" 
+                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </nav>
   );
 }
