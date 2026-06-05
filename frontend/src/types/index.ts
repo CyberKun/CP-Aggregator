@@ -1,4 +1,4 @@
-export type Platform = 'CODEFORCES' | 'LEETCODE';
+export type Platform = 'CODEFORCES' | 'LEETCODE' | 'ATCODER' | 'CODECHEF';
 export type ContestPhase = 'BEFORE' | 'CODING' | 'FINISHED';
 
 export interface Contest {
