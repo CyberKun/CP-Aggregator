@@ -10,6 +10,8 @@ datasource db {
 enum Platform {
   CODEFORCES
   LEETCODE
+  ATCODER
+  CODECHEF
 }
 
 enum ContestPhase {

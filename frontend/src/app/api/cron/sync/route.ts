@@ -19,8 +19,12 @@ export async function GET(req: NextRequest) {
     await Promise.allSettled([
       syncCodeforcesContests(),
       syncLeetCodeContests(),
+      syncAtCoderContests(),
+      syncCodeChefContests(),
       syncCodeforcesProblems(),
       syncLeetCodeProblems(),
+      syncAtCoderProblems(),
+      syncCodeChefProblems(),
     ]);
 
     console.log('Sync completed.');
@@ -195,5 +199,187 @@ async function syncLeetCodeProblems() {
     }
   } catch (err) {
     console.error('Error syncing LeetCode problems', err);
+  }
+}
+
+// ---- ATCODER CONTESTS ----
+async function syncAtCoderContests() {
+  try {
+    const res = await fetch('https://kenkoooo.com/atcoder/resources/contests.json');
+    const contests = await res.json();
+    if (!Array.isArray(contests)) return;
+
+    const now = new Date();
+    const twoYearsAgo = new Date(now.getTime() - 2 * 365 * 24 * 60 * 60 * 1000);
+    
+    // Only sync contests from the last 2 years + future ones
+    const recentContests = contests.filter((c: any) => {
+      const startTime = new Date(c.start_epoch_second * 1000);
+      return startTime >= twoYearsAgo;
+    });
+
+    const chunkSize = 50;
+    for (let i = 0; i < recentContests.length; i += chunkSize) {
+      const chunk = recentContests.slice(i, i + chunkSize);
+      
+      await Promise.all(chunk.map(async (c: any) => {
+        const startTime = new Date(c.start_epoch_second * 1000);
+        const endTime = new Date((c.start_epoch_second + c.duration_second) * 1000);
+        
+        let phase: ContestPhase = ContestPhase.BEFORE;
+        if (now >= startTime && now <= endTime) phase = ContestPhase.CODING;
+        else if (now > endTime) phase = ContestPhase.FINISHED;
+
+        await prisma.contest.upsert({
+          where: { platform_externalId: { platform: Platform.ATCODER, externalId: c.id } },
+          update: { name: c.title, startTime, endTime, phase },
+          create: {
+            platform: Platform.ATCODER,
+            externalId: c.id,
+            name: c.title,
+            url: `https://atcoder.jp/contests/${c.id}`,
+            startTime,
+            endTime,
+            phase,
+          }
+        });
+      }));
+    }
+    console.log(`Synced ${recentContests.length} AtCoder contests`);
+  } catch (err) {
+    console.error('Error syncing AtCoder contests', err);
+  }
+}
+
+// ---- CODECHEF CONTESTS ----
+async function syncCodeChefContests() {
+  try {
+    const res = await fetch('https://www.codechef.com/api/list/contests/all');
+    const data = await res.json();
+    if (data.status !== 'success') return;
+
+    const now = new Date();
+    const allContests = [
+      ...(data.present_contests || []),
+      ...(data.future_contests || []),
+      ...(data.past_contests || [])
+    ];
+
+    const chunkSize = 50;
+    for (let i = 0; i < allContests.length; i += chunkSize) {
+      const chunk = allContests.slice(i, i + chunkSize);
+      
+      await Promise.all(chunk.map(async (c: any) => {
+        const startTime = new Date(c.contest_start_date_iso);
+        const endTime = new Date(c.contest_end_date_iso);
+        
+        let phase: ContestPhase = ContestPhase.BEFORE;
+        if (now >= startTime && now <= endTime) phase = ContestPhase.CODING;
+        else if (now > endTime) phase = ContestPhase.FINISHED;
+
+        await prisma.contest.upsert({
+          where: { platform_externalId: { platform: Platform.CODECHEF, externalId: c.contest_code } },
+          update: { name: c.contest_name, startTime, endTime, phase },
+          create: {
+            platform: Platform.CODECHEF,
+            externalId: c.contest_code,
+            name: c.contest_name,
+            url: `https://www.codechef.com/${c.contest_code}`,
+            startTime,
+            endTime,
+            phase,
+          }
+        });
+      }));
+    }
+    console.log(`Synced ${allContests.length} CodeChef contests`);
+  } catch (err) {
+    console.error('Error syncing CodeChef contests', err);
+  }
+}
+
+// ---- ATCODER PROBLEMS ----
+async function syncAtCoderProblems() {
+  try {
+    const [probsRes, modelsRes] = await Promise.all([
+      fetch('https://kenkoooo.com/atcoder/resources/problems.json'),
+      fetch('https://kenkoooo.com/atcoder/resources/problem-models.json')
+    ]);
+    const problems = await probsRes.json();
+    const models = await modelsRes.json();
+    
+    if (!Array.isArray(problems)) return;
+
+    const chunkSize = 100;
+    for (let i = 0; i < problems.length; i += chunkSize) {
+      const chunk = problems.slice(i, i + chunkSize);
+      
+      await Promise.all(chunk.map(async (p: any) => {
+        const externalId = p.id;
+        const model = models[externalId];
+        const difficulty = model && model.difficulty !== undefined ? Math.round(model.difficulty) : null;
+        // Negative difficulty means gray/easy, AtCoder sets min rating for display at 0 usually
+        const rating = difficulty !== null ? Math.max(0, difficulty) : null;
+        
+        await prisma.problem.upsert({
+          where: { platform_externalId: { platform: Platform.ATCODER, externalId } },
+          update: { 
+            rating: rating,
+          },
+          create: {
+            platform: Platform.ATCODER,
+            externalId,
+            name: p.title,
+            url: `https://atcoder.jp/contests/${p.contest_id}/tasks/${p.id}`,
+            rating: rating,
+            difficulty: rating !== null ? rating.toString() : null,
+            tags: []
+          }
+        });
+      }));
+    }
+  } catch (err) {
+    console.error('Error syncing AtCoder problems', err);
+  }
+}
+
+// ---- CODECHEF PROBLEMS ----
+async function syncCodeChefProblems() {
+  try {
+    // CodeChef API limits to max 100 limit, let's fetch first few pages
+    for (let page = 1; page <= 5; page++) {
+      const res = await fetch(`https://www.codechef.com/api/list/problems?page=${page}&limit=100`);
+      const data = await res.json();
+      
+      if (data.status !== 'success' || !data.data) continue;
+
+      const problems = data.data;
+      
+      await Promise.all(problems.map(async (p: any) => {
+        const externalId = p.code;
+        const rating = parseInt(p.difficulty_rating);
+        const validRating = (isNaN(rating) || rating === -1) ? null : rating;
+        
+        await prisma.problem.upsert({
+          where: { platform_externalId: { platform: Platform.CODECHEF, externalId } },
+          update: { 
+            rating: validRating,
+            solvedCount: parseInt(p.successful_submissions) || 0
+          },
+          create: {
+            platform: Platform.CODECHEF,
+            externalId,
+            name: p.name,
+            url: `https://www.codechef.com/problems/${p.code}`,
+            rating: validRating,
+            difficulty: validRating !== null ? validRating.toString() : null,
+            solvedCount: parseInt(p.successful_submissions) || 0,
+            tags: []
+          }
+        });
+      }));
+    }
+  } catch (err) {
+    console.error('Error syncing CodeChef problems', err);
   }
 }

@@ -82,7 +82,18 @@ export function useProblems() {
       } else {
         const apiFilters = { ...filters };
         const activePlatform = filters.platforms[0];
-        if (activePlatform !== 'CODEFORCES') {
+        const usesRating = ['CODEFORCES', 'ATCODER', 'CODECHEF'].includes(activePlatform);
+        
+        const isDefaultMin = 
+          (activePlatform === 'CODEFORCES' && filters.minRating === 800) ||
+          (activePlatform !== 'CODEFORCES' && filters.minRating === 0);
+          
+        const isDefaultMax = 
+          (activePlatform === 'CODEFORCES' && filters.maxRating === 3500) ||
+          (activePlatform === 'ATCODER' && filters.maxRating === 4000) ||
+          (activePlatform === 'CODECHEF' && filters.maxRating === 5000);
+
+        if (!usesRating || (isDefaultMin && isDefaultMax)) {
           delete apiFilters.minRating;
           delete apiFilters.maxRating;
         }

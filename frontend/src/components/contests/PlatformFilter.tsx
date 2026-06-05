@@ -6,6 +6,7 @@ import { PLATFORMS } from '@/lib/constants';
 import { Platform } from '@/types';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { PlatformIcon } from '@/components/ui/PlatformIcon';
 
 interface PlatformFilterProps {
   selectedPlatforms: Set<Platform>;
@@ -23,8 +24,8 @@ export function PlatformFilter({ selectedPlatforms, onToggle, onToggleAll }: Pla
         className={cn(
           "px-4 py-2 rounded-full text-sm font-medium transition-all relative overflow-hidden border",
           allSelected 
-            ? "bg-white/10 text-white border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]" 
-            : "bg-transparent text-slate-400 border-white/5 hover:border-white/10 hover:text-slate-200"
+            ? "bg-[var(--color-elevated)] text-[var(--color-text-primary)] border-[var(--color-border-hover)] shadow-sm" 
+            : "bg-[var(--color-panel)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
         )}
       >
         {allSelected && (
@@ -50,18 +51,23 @@ export function PlatformFilter({ selectedPlatforms, onToggle, onToggleAll }: Pla
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium transition-all relative overflow-hidden border",
               isSelected 
-                ? "text-white shadow-lg" 
-                : "bg-transparent text-slate-400 border-white/5 hover:border-white/10 hover:text-slate-200"
+                ? "text-[var(--color-text-primary)] shadow-sm bg-[var(--color-panel)]" 
+                : "bg-[var(--color-panel)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
             )}
             style={{ 
               borderColor: isSelected ? platform.color + '40' : undefined,
-              backgroundColor: isSelected ? platform.color + '20' : undefined
+              backgroundColor: isSelected ? platform.color + '10' : undefined
             }}
           >
             <span className="relative z-10 flex items-center gap-2">
-              <div 
-                className="w-2.5 h-2.5 rounded-full" 
-                style={{ backgroundColor: platform.color, boxShadow: isSelected ? `0 0 8px ${platform.color}` : 'none' }} 
+              <PlatformIcon 
+                platform={platform.key} 
+                color={platform.color} 
+                className="w-4 h-4 mr-0.5"
+                style={{ 
+                  filter: isSelected ? `drop-shadow(0 0 4px ${platform.color}80)` : 'none',
+                  boxShadow: isSelected && platform.key !== 'CODEFORCES' && platform.key !== 'LEETCODE' ? `0 0 8px ${platform.color}40` : 'none' 
+                }} 
               />
               {platform.name}
             </span>

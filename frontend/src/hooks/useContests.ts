@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Contest, Platform } from '@/types';
 import { contestApi } from '@/lib/api';
+import { PLATFORMS } from '@/lib/constants';
 
 const USE_MOCK = true;
 
@@ -95,7 +96,7 @@ function generateMockContests(): Contest[] {
 export function useContests() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<Set<Platform>>(
-    new Set(['CODEFORCES', 'LEETCODE'])
+    new Set(PLATFORMS.map(p => p.key as Platform))
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,10 +170,10 @@ export function useContests() {
 
   const toggleAllPlatforms = useCallback(() => {
     setSelectedPlatforms((prev) => {
-      if (prev.size === 2) {
+      if (prev.size === PLATFORMS.length) {
         return new Set();
       }
-      return new Set(['CODEFORCES', 'LEETCODE']);
+      return new Set(PLATFORMS.map(p => p.key as Platform));
     });
   }, []);
 
