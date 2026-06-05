@@ -15,8 +15,6 @@ export function Sidebar() {
   const navItems = [
     { name: 'Contests', path: '/contests', icon: Calendar, active: true },
     { name: 'Practice', path: '/practice', icon: Trophy, active: true },
-    { name: 'Analytics', path: '/analytics', icon: LineChart, active: true },
-    { name: 'Leaderboard', path: '/leaderboard', icon: Trophy, active: true },
     { name: 'Profile', path: '/profile', icon: User, active: true },
   ];
 
@@ -85,13 +83,6 @@ export function Sidebar() {
             <span className="font-medium text-sm">Login</span>
           </Link>
         )}
-        <div className="flex items-center gap-3 glass p-3 rounded-xl border border-white/10">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <div className="text-xs text-slate-300">
-            <span className="font-semibold block text-white">Phase 1</span>
-            Contest Calendar
-          </div>
-        </div>
       </div>
     </aside>
   );

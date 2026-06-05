@@ -4,7 +4,7 @@ import type { Contest, ProblemFilterRequest, Page, Problem } from '@/types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -29,15 +29,29 @@ export const contestApi = {
       },
     }),
 
-  getUpcoming: () => api.get<Contest[]>('/contests/upcoming'),
+  getUpcoming: () => api.get<Contest[]>('/contests', { params: { upcoming: 'true' } }),
 
-  getLive: () => api.get<Contest[]>('/contests/live'),
+  getLive: () => api.get<Contest[]>('/contests'), // You can add logic for live later if needed
 
-  refresh: () => api.post('/contests/refresh'),
+  refresh: () => api.get('/cron/sync?secret=cp-aggregator-cron-secret'),
 };
 
 export const problemApi = {
-  search: (filters: ProblemFilterRequest) => api.post<Page<Problem>>('/problems/search', filters),
+  search: (filters: ProblemFilterRequest) => {
+    // Next.js uses standard GET params instead of POST
+    const params = new URLSearchParams();
+    if (filters.page !== undefined) params.append('page', filters.page.toString());
+    if (filters.size !== undefined) params.append('size', filters.size.toString());
+    if (filters.platforms && filters.platforms.length > 0) params.append('platform', filters.platforms[0]);
+    if (filters.minRating) params.append('minRating', filters.minRating.toString());
+    if (filters.maxRating) params.append('maxRating', filters.maxRating.toString());
+    if (filters.difficulties && filters.difficulties.length > 0) params.append('difficulty', filters.difficulties.join(','));
+    if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
+    if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+    if (filters.sortBy) params.append('sort', `${filters.sortBy},${filters.sortDir || 'asc'}`);
+
+    return api.get<Page<Problem>>(`/problems?${params.toString()}`);
+  }
 };
 
 export const authApi = {
@@ -46,11 +60,9 @@ export const authApi = {
 };
 
 export const userApi = {
-  getMe: () => api.get<any>('/users/me'),
-  linkPlatform: (data: { platform: string; handle: string }) => api.post<any>('/users/me/platforms', data),
-  syncData: () => api.post<any>('/users/me/sync'),
-  getAttemptedContests: () => api.get<string[]>('/users/me/contests/attempted'),
-  getSolvedProblems: () => api.get<string[]>('/users/me/problems/solved'),
+  getMe: () => api.get<any>('/user'),
+  linkPlatform: (data: { platform: string; handle: string }) => api.post<any>('/user/platforms', data),
+  syncData: () => api.post<any>('/user/sync'),
 };
 
 export default api;

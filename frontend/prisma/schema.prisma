@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  CODEFORCES
+  LEETCODE
+}
+
+enum ContestPhase {
+  BEFORE
+  CODING
+  PENDING_SYSTEM_TEST
+  SYSTEM_TEST
+  FINISHED
+}
+
+model User {
+  id               String                 @id @default(cuid())
+  username         String                 @unique
+  email            String                 @unique
+  password         String
+  createdAt        DateTime               @default(now())
+  platforms        UserPlatform[]
+  solvedProblems   UserSolvedProblem[]
+  attemptedContests UserAttemptedContest[]
+}
+
+model UserPlatform {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform    Platform
+  handle      String
+  solvedCount Int      @default(0)
+  syncedAt    DateTime?
+
+  @@unique([userId, platform])
+}
+
+model Problem {
+  id          String   @id @default(cuid())
+  externalId  String
+  platform    Platform
+  name        String
+  url         String
+  rating      Int?
+  difficulty  String?
+  solvedCount Int?
+  tags        String[]
+
+  solvedBy    UserSolvedProblem[]
+
+  @@unique([platform, externalId])
+}
+
+model Contest {
+  id          String   @id @default(cuid())
+  externalId  String
+  platform    Platform
+  name        String
+  url         String
+  startTime   DateTime
+  endTime     DateTime
+  phase       ContestPhase
+
+  attemptedBy UserAttemptedContest[]
+
+  @@unique([platform, externalId])
+}
+
+model UserSolvedProblem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId String
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  platform  Platform
+  solvedAt  DateTime @default(now())
+
+  @@unique([userId, problemId])
+}
+
+model UserAttemptedContest {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contestId    String
+  contest      Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  platform     Platform
+  ratingChange Int?
+  rank         Int?
+
+  @@unique([userId, contestId])
+}

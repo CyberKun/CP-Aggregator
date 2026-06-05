@@ -101,8 +101,10 @@ export function useProblems() {
         if (token) {
           try {
             const { userApi } = await import('@/lib/api');
-            const solvedRes = await userApi.getSolvedProblems();
-            setSolvedProblemIds(new Set(solvedRes.data));
+            const meRes = await userApi.getMe();
+            if (meRes.data && meRes.data.solvedProblemIds) {
+              setSolvedProblemIds(new Set(meRes.data.solvedProblemIds));
+            }
           } catch (e) {
             console.error("Failed to fetch solved problems", e);
           }

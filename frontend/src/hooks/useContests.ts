@@ -112,8 +112,10 @@ export function useContests() {
       if (token) {
         try {
           const { userApi } = await import('@/lib/api');
-          const attemptedRes = await userApi.getAttemptedContests();
-          setAttemptedContestIds(new Set(attemptedRes.data));
+          const meRes = await userApi.getMe();
+          if (meRes.data && meRes.data.attemptedContestIds) {
+            setAttemptedContestIds(new Set(meRes.data.attemptedContestIds));
+          }
         } catch (e) {
           console.error("Failed to fetch attempted contests", e);
         }

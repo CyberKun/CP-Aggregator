@@ -69,7 +69,7 @@ export function ContestCard({ contest, index }: ContestCardProps) {
           <div className="flex items-center justify-between flex-wrap gap-y-3 mt-auto pt-4 border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-slate-400 bg-slate-800/50 px-2 py-1 rounded whitespace-nowrap">
-                {formatDuration(contest.durationSeconds)}
+                {formatDuration(contest.durationSeconds || ((new Date(contest.endTime || contest.startTime).getTime() - new Date(contest.startTime).getTime()) / 1000))}
               </span>
             </div>
 
