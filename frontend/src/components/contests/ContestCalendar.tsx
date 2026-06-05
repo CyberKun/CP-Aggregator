@@ -81,7 +81,7 @@ export function ContestCalendar() {
   return (
     <div className="w-full">
       {/* Filters Header */}
-      <div className="mb-8 sticky top-16 z-20 bg-[var(--color-void)]/80 backdrop-blur-xl pt-4 pb-2 -mx-8 px-8 border-b border-[var(--color-border)]">
+      <div className="mb-8 sticky top-16 z-20 bg-[var(--color-void)]/80 backdrop-blur-xl pt-4 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--color-border)]">
         <PlatformFilter 
           selectedPlatforms={selectedPlatforms} 
           onToggle={togglePlatform} 

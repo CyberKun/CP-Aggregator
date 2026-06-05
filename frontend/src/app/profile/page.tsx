@@ -65,7 +65,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8 pb-12">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Profile</h1>
           <p className="text-slate-400 mt-2">Manage your account and linked platforms.</p>
@@ -151,7 +151,7 @@ export default function ProfilePage() {
               <h4 className="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
                 <LinkIcon className="w-4 h-4" /> Link New Platform
               </h4>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <select 
                   value={selectedPlatform}
                   onChange={(e) => setSelectedPlatform(e.target.value)}
