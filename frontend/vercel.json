@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/sync?secret=cp-aggregator-cron-secret",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
