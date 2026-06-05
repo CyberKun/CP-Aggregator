@@ -168,31 +168,37 @@ async function syncCodeforcesProblems() {
 // ---- LEETCODE PROBLEMS ----
 async function syncLeetCodeProblems() {
   try {
-    const res = await fetch('https://alfa-leetcode-api.onrender.com/problems?limit=2000'); // Fetch a large chunk
+    const res = await fetch('https://leetcode.com/api/problems/algorithms/');
     const data = await res.json();
     
-    if (!data.problemsetQuestionList) return;
+    if (!data.stat_status_pairs) return;
 
-    const problems = data.problemsetQuestionList;
-    const chunkSize = 100;
+    const problems = data.stat_status_pairs;
+    const chunkSize = 200;
+    
     for (let i = 0; i < problems.length; i += chunkSize) {
       const chunk = problems.slice(i, i + chunkSize);
       
       await Promise.all(chunk.map(async (p: any) => {
-        const externalId = p.titleSlug;
+        const externalId = p.stat.question__title_slug;
+        const level = p.difficulty.level; // 1: Easy, 2: Medium, 3: Hard
+        const difficultyMap = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+        const difficulty = difficultyMap[level as keyof typeof difficultyMap] || 'Medium';
         
         await prisma.problem.upsert({
           where: { platform_externalId: { platform: Platform.LEETCODE, externalId } },
           update: { 
-            difficulty: p.difficulty,
+            difficulty,
+            solvedCount: p.stat.total_acs || 0
           },
           create: {
             platform: Platform.LEETCODE,
             externalId,
-            name: p.title,
-            url: `https://leetcode.com/problems/${p.titleSlug}`,
-            difficulty: p.difficulty,
-            tags: p.topicTags ? p.topicTags.map((t: any) => t.name) : []
+            name: p.stat.question__title,
+            url: `https://leetcode.com/problems/${externalId}`,
+            difficulty,
+            solvedCount: p.stat.total_acs || 0,
+            tags: []
           }
         });
       }));
@@ -346,38 +352,43 @@ async function syncAtCoderProblems() {
 // ---- CODECHEF PROBLEMS ----
 async function syncCodeChefProblems() {
   try {
-    // CodeChef API limits to max 100 limit, let's fetch first few pages
-    for (let page = 1; page <= 5; page++) {
-      const res = await fetch(`https://www.codechef.com/api/list/problems?page=${page}&limit=100`);
+    // CodeChef API limits to max 100 limit originally, but it accepts larger limits
+    for (let page = 1; page <= 2; page++) {
+      const res = await fetch(`https://www.codechef.com/api/list/problems?page=${page}&limit=5000`);
       const data = await res.json();
       
-      if (data.status !== 'success' || !data.data) continue;
+      if (data.status !== 'success' || !data.data || data.data.length === 0) continue;
 
       const problems = data.data;
+      const chunkSize = 200;
       
-      await Promise.all(problems.map(async (p: any) => {
-        const externalId = p.code;
-        const rating = parseInt(p.difficulty_rating);
-        const validRating = (isNaN(rating) || rating === -1) ? null : rating;
+      for (let i = 0; i < problems.length; i += chunkSize) {
+        const chunk = problems.slice(i, i + chunkSize);
         
-        await prisma.problem.upsert({
-          where: { platform_externalId: { platform: Platform.CODECHEF, externalId } },
-          update: { 
-            rating: validRating,
-            solvedCount: parseInt(p.successful_submissions) || 0
-          },
-          create: {
-            platform: Platform.CODECHEF,
-            externalId,
-            name: p.name,
-            url: `https://www.codechef.com/problems/${p.code}`,
-            rating: validRating,
-            difficulty: validRating !== null ? validRating.toString() : null,
-            solvedCount: parseInt(p.successful_submissions) || 0,
-            tags: []
-          }
-        });
-      }));
+        await Promise.all(chunk.map(async (p: any) => {
+          const externalId = p.code;
+          const rating = parseInt(p.difficulty_rating);
+          const validRating = (isNaN(rating) || rating === -1) ? null : rating;
+          
+          await prisma.problem.upsert({
+            where: { platform_externalId: { platform: Platform.CODECHEF, externalId } },
+            update: { 
+              rating: validRating,
+              solvedCount: parseInt(p.successful_submissions) || 0
+            },
+            create: {
+              platform: Platform.CODECHEF,
+              externalId,
+              name: p.name,
+              url: `https://www.codechef.com/problems/${p.code}`,
+              rating: validRating,
+              difficulty: validRating !== null ? validRating.toString() : null,
+              solvedCount: parseInt(p.successful_submissions) || 0,
+              tags: []
+            }
+          });
+        }));
+      }
     }
   } catch (err) {
     console.error('Error syncing CodeChef problems', err);
