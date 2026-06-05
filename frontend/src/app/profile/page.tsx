@@ -8,6 +8,8 @@ import { userApi } from '@/lib/api';
 import { User, Link as LinkIcon, RefreshCw, CheckCircle } from 'lucide-react';
 import { PLATFORMS } from '@/lib/constants';
 import { AppShell } from '@/components/layout/AppShell';
+import { getPlatformIcon } from '@/components/icons/PlatformIcons';
+import { getPlatformColor } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, loading, refreshUser } = useAuth();
@@ -128,7 +130,9 @@ export default function ProfilePage() {
                 user.platforms.map((p) => (
                   <div key={p.platform} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-emerald-400" />
+                      <div style={{ color: getPlatformColor(p.platform) }}>
+                        {getPlatformIcon(p.platform, "w-6 h-6")}
+                      </div>
                       <div>
                         <p className="font-medium text-white">{p.platform}</p>
                         <p className="text-sm text-slate-400">Handle: {p.handle}</p>
