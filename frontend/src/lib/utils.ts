@@ -100,3 +100,70 @@ export function getPhaseColor(phase: ContestPhase): string {
       return '#64748b';
   }
 }
+
+export function checkClashes(contests: Contest[]): Record<string, string[]> {
+  const clashes: Record<string, string[]> = {};
+  
+  for (let i = 0; i < contests.length; i++) {
+    const c1 = contests[i];
+    // Start and End times in ms
+    const s1 = new Date(c1.startTime).getTime();
+    const e1 = c1.endTime ? new Date(c1.endTime).getTime() : s1 + c1.durationSeconds * 1000;
+    
+    clashes[c1.externalId] = [];
+
+    for (let j = 0; j < contests.length; j++) {
+      if (i === j) continue;
+      const c2 = contests[j];
+      const s2 = new Date(c2.startTime).getTime();
+      const e2 = c2.endTime ? new Date(c2.endTime).getTime() : s2 + c2.durationSeconds * 1000;
+      
+      // Buffer of 30 minutes = 1800000 ms
+      const BUFFER = 30 * 60 * 1000;
+
+      // Two intervals [s1, e1] and [s2, e2] overlap if (s1 - BUFFER) < e2 and s2 < (e1 + BUFFER)
+      if (s1 - BUFFER < e2 && s2 < e1 + BUFFER) {
+        clashes[c1.externalId].push(c2.name);
+      }
+    }
+  }
+  return clashes;
+}
+
+export function generateIcsFile(contest: Contest) {
+  const startDate = new Date(contest.startTime);
+  const endDate = contest.endTime
+    ? new Date(contest.endTime)
+    : new Date(startDate.getTime() + contest.durationSeconds * 1000);
+
+  const formatIcsDate = (d: Date) =>
+    d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+  const icsString = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//CP Aggregator//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+SUMMARY:${contest.name}
+DTSTART:${formatIcsDate(startDate)}
+DTEND:${formatIcsDate(endDate)}
+DESCRIPTION:Contest on ${getPlatformName(contest.platform)}\\n\\nLink: ${contest.url}
+LOCATION:${contest.url}
+STATUS:CONFIRMED
+BEGIN:VALARM
+TRIGGER:-PT15M
+DESCRIPTION:Reminder: ${contest.name}
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+  const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `${contest.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useContests } from '@/hooks/useContests';
 import { PlatformFilter } from './PlatformFilter';
 import { ContestCard } from './ContestCard';
 import { PLATFORMS } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlatformIcon } from '@/components/ui/PlatformIcon';
+import { checkClashes } from '@/lib/utils';
 
 export function ContestCalendar() {
   const { 
@@ -31,6 +32,8 @@ export function ContestCalendar() {
       return attemptedFilter === 'attempted' ? isAttempted : !isAttempted;
     });
   }, [past, attemptedFilter, attemptedContestIds]);
+
+  const clashesMap = useMemo(() => checkClashes(upcoming), [upcoming]);
 
   if (error) {
     return (
@@ -69,7 +72,12 @@ export function ContestCalendar() {
           >
             <AnimatePresence mode="popLayout">
               {contests.slice(0, 50).map((contest, index) => (
-                <ContestCard key={`${contest.platform}-${contest.externalId}`} contest={contest} index={index} />
+                <ContestCard 
+                  key={`${contest.platform}-${contest.externalId}`} 
+                  contest={contest} 
+                  index={index} 
+                  clashingWith={title === 'Upcoming Contests' ? clashesMap[contest.externalId] : undefined}
+                />
               ))}
             </AnimatePresence>
           </motion.div>

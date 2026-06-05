@@ -1,21 +1,22 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Clock } from 'lucide-react';
+import { ExternalLink, Clock, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Contest } from '@/types';
 import { Badge } from '../ui/Badge';
 import { CountdownTimer } from './CountdownTimer';
-import { GoogleCalendarButton } from './GoogleCalendarButton';
+import { CalendarSyncMenu } from './CalendarSyncMenu';
 import { getPlatformColor, formatDate, formatDuration } from '@/lib/utils';
 import { PLATFORMS } from '@/lib/constants';
 
 interface ContestCardProps {
   contest: Contest;
   index: number;
+  clashingWith?: string[];
 }
 
-export function ContestCard({ contest, index }: ContestCardProps) {
+export function ContestCard({ contest, index, clashingWith }: ContestCardProps) {
   const platformColor = getPlatformColor(contest.platform);
   const platformInfo = PLATFORMS.find(p => p.key === contest.platform);
   const isLive = contest.phase === 'CODING';
@@ -27,11 +28,11 @@ export function ContestCard({ contest, index }: ContestCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
       layout
-      className="relative bg-[var(--color-panel)] rounded-xl overflow-hidden border border-[var(--color-border)] shadow-md flex flex-col h-full hover:border-[var(--color-elevated)] transition-colors"
+      className="relative bg-[var(--color-panel)] rounded-xl overflow-visible border border-[var(--color-border)] shadow-md flex flex-col h-full hover:border-[var(--color-elevated)] transition-colors"
     >
       {/* Top accent bar */}
       <div 
-        className="absolute left-0 top-0 right-0 h-1" 
+        className="absolute left-0 top-0 right-0 h-1 rounded-t-xl overflow-hidden" 
         style={{ backgroundColor: platformColor }} 
       />
 
@@ -64,6 +65,17 @@ export function ContestCard({ contest, index }: ContestCardProps) {
           <h3 className="text-lg font-bold text-[var(--color-text-primary)] leading-snug line-clamp-2" title={contest.name}>
             {contest.name}
           </h3>
+          
+          {/* Clash Warning */}
+          {clashingWith && clashingWith.length > 0 && (
+            <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold">Clashes with:</span>
+                <span>{clashingWith.join(', ')}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Row: Duration & Status/Actions */}
@@ -89,7 +101,7 @@ export function ContestCard({ contest, index }: ContestCardProps) {
             )}
 
             <div className="flex items-center gap-2 pl-2">
-              {!isPast && <GoogleCalendarButton contest={contest} />}
+              {!isPast && <CalendarSyncMenu contest={contest} />}
               <a
                 href={contest.url}
                 target="_blank"
