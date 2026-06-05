@@ -2,7 +2,7 @@ import { ContestCalendar } from '@/components/contests/ContestCalendar';
 import { AppShell } from '@/components/layout/AppShell';
 
 export const metadata = {
-  title: 'Contest Calendar | CP Arena',
+  title: 'Contest Calendar | CP Times',
   description: 'Track upcoming competitive programming contests from Codeforces and LeetCode.',
 };
 
