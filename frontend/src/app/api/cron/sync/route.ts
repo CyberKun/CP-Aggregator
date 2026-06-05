@@ -44,7 +44,7 @@ async function syncCodeforcesContests() {
       const startTime = new Date(c.startTimeSeconds * 1000);
       const endTime = new Date((c.startTimeSeconds + c.durationSeconds) * 1000);
       
-      let phase = ContestPhase.BEFORE;
+      let phase: ContestPhase = ContestPhase.BEFORE;
       if (c.phase === 'BEFORE') phase = ContestPhase.BEFORE;
       else if (c.phase === 'CODING') phase = ContestPhase.CODING;
       else if (c.phase === 'PENDING_SYSTEM_TEST') phase = ContestPhase.PENDING_SYSTEM_TEST;
@@ -91,7 +91,7 @@ async function syncLeetCodeContests() {
       const endTime = new Date((c.startTime + c.duration) * 1000);
       const now = new Date();
       
-      let phase = ContestPhase.BEFORE;
+      let phase: ContestPhase = ContestPhase.BEFORE;
       if (now >= startTime && now <= endTime) phase = ContestPhase.CODING;
       else if (now > endTime) phase = ContestPhase.FINISHED;
 
