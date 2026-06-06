@@ -236,12 +236,12 @@ async function syncLeetCodeUser(userId: string, handle: string): Promise<number>
           }
         });
 
-        const recentAttemptedIds = new Set<number>();
+        const recentAttemptedIds = new Set<string>();
         for (const sub of data.submission) {
           const subTime = parseInt(sub.timestamp) * 1000;
           for (const c of recentContests) {
             const startTime = c.startTime.getTime();
-            const endTime = c.endTime ? c.endTime.getTime() : startTime + (c.durationSeconds * 1000);
+            const endTime = c.endTime.getTime();
             if (subTime >= startTime && subTime <= endTime) {
               recentAttemptedIds.add(c.id);
             }
