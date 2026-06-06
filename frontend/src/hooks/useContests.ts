@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Contest, Platform } from '@/types';
+import type { Contest, Platform, ContestPhase } from '@/types';
 import { contestApi } from '@/lib/api';
 import { PLATFORMS } from '@/lib/constants';
 
@@ -154,7 +154,18 @@ export function useContests() {
     });
   }, []);
 
-  const filtered = contests.filter((c) => selectedPlatforms.has(c.platform));
+  const now = Date.now();
+  const getComputedPhase = (c: any): ContestPhase => {
+    const start = new Date(c.startTime).getTime();
+    const end = c.endTime ? new Date(c.endTime).getTime() : (c.durationSeconds ? start + (c.durationSeconds * 1000) : start);
+    if (now < start) return 'BEFORE';
+    if (now >= start && now <= end) return 'CODING';
+    return 'FINISHED';
+  };
+
+  const filtered = contests
+    .filter((c) => selectedPlatforms.has(c.platform))
+    .map((c) => ({ ...c, phase: getComputedPhase(c) }));
 
   const live = filtered
     .filter((c) => c.phase === 'CODING')
