@@ -31,7 +31,7 @@ export function ProblemGrid({ problems, solvedIds }: ProblemGridProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
         <AnimatePresence mode="popLayout">
           {problems.map((problem, index) => {
-            const isSolved = solvedIds.has(problem.id);
+            const isSolved = solvedIds.has(problem.externalId);
             const pInfo = PLATFORM_MAP[problem.platform];
             
             return (
@@ -67,7 +67,7 @@ export function ProblemGrid({ problems, solvedIds }: ProblemGridProps) {
                       {pInfo?.name || problem.platform}
                     </span>
                     <span className="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-void)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
-                      {problem.platformId}
+                      {problem.externalId}
                     </span>
                   </div>
                   

@@ -66,6 +66,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  avatarUrl?: string;
   totalSolved: number;
   platforms?: PlatformLink[];
 }
