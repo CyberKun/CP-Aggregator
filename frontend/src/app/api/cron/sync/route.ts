@@ -168,37 +168,76 @@ async function syncCodeforcesProblems() {
 // ---- LEETCODE PROBLEMS ----
 async function syncLeetCodeProblems() {
   try {
+    // 1. Fetch total ACs from old API
     const res = await fetch('https://leetcode.com/api/problems/algorithms/');
     const data = await res.json();
-    
     if (!data.stat_status_pairs) return;
-
-    const problems = data.stat_status_pairs;
-    const chunkSize = 200;
     
-    for (let i = 0; i < problems.length; i += chunkSize) {
-      const chunk = problems.slice(i, i + chunkSize);
+    const acsMap = new Map<string, number>();
+    for (const p of data.stat_status_pairs) {
+      acsMap.set(p.stat.question__title_slug, p.stat.total_acs || 0);
+    }
+
+    // 2. Fetch tags and metadata from GraphQL with pagination
+    let allQuestions: any[] = [];
+    let skip = 0;
+    const limit = 100;
+    
+    while (true) {
+      const query = `
+        query problemsetQuestionList {
+          problemsetQuestionList: questionList(categorySlug: "", limit: ${limit}, skip: ${skip}, filters: {}) {
+            questions: data {
+              title
+              titleSlug
+              difficulty
+              topicTags { slug }
+            }
+          }
+        }
+      `;
+
+      const gqlRes = await fetch('https://leetcode.com/graphql/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      
+      const gqlData = await gqlRes.json();
+      const questions = gqlData?.data?.problemsetQuestionList?.questions;
+      
+      if (!questions || questions.length === 0) break;
+      allQuestions.push(...questions);
+      skip += limit;
+    }
+    
+    if (allQuestions.length === 0) return;
+
+    const chunkSize = 200;
+    for (let i = 0; i < allQuestions.length; i += chunkSize) {
+      const chunk = allQuestions.slice(i, i + chunkSize);
       
       await Promise.all(chunk.map(async (p: any) => {
-        const externalId = p.stat.question__title_slug;
-        const level = p.difficulty.level; // 1: Easy, 2: Medium, 3: Hard
-        const difficultyMap = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
-        const difficulty = difficultyMap[level as keyof typeof difficultyMap] || 'Medium';
+        const externalId = p.titleSlug;
+        const difficulty = p.difficulty; // "Easy", "Medium", "Hard"
+        const tags = p.topicTags ? p.topicTags.map((t: any) => t.slug) : [];
+        const solvedCount = acsMap.get(externalId) || 0;
         
         await prisma.problem.upsert({
           where: { platform_externalId: { platform: Platform.LEETCODE, externalId } },
           update: { 
             difficulty,
-            solvedCount: p.stat.total_acs || 0
+            solvedCount,
+            tags
           },
           create: {
             platform: Platform.LEETCODE,
             externalId,
-            name: p.stat.question__title,
+            name: p.title,
             url: `https://leetcode.com/problems/${externalId}`,
             difficulty,
-            solvedCount: p.stat.total_acs || 0,
-            tags: []
+            solvedCount,
+            tags
           }
         });
       }));
