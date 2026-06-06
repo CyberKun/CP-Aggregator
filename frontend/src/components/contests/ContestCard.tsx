@@ -25,10 +25,12 @@ export function ContestCard({ contest, index, clashingWith }: ContestCardProps) 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      animate={{ opacity: 1, y: 0, transition: { duration: 0.4, delay: index * 0.05, ease: 'easeOut' } }}
+      exit={{ opacity: 0, scale: 0.9, y: -20, transition: { duration: 0.2 } }}
+      whileHover={{ scale: 1.1, y: -12 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       layout
-      className="relative bg-[var(--color-panel)] rounded-xl overflow-visible border border-[var(--color-border)] shadow-md flex flex-col h-full hover:border-[var(--color-elevated)] transition-colors"
+      className="relative bg-[var(--color-panel)] rounded-xl overflow-visible border border-[var(--color-border)] shadow-md flex flex-col h-full hover:border-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/20 transition-colors z-0 hover:z-10"
     >
       {/* Top accent bar */}
       <div 
@@ -68,7 +70,7 @@ export function ContestCard({ contest, index, clashingWith }: ContestCardProps) 
           
           {/* Clash Warning */}
           {clashingWith && clashingWith.length > 0 && (
-            <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs">
+            <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-slate-200/10 text-slate-200 border border-slate-200/20 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="flex flex-col gap-0.5">
                 <span className="font-bold">Clashes with:</span>
@@ -91,8 +93,8 @@ export function ContestCard({ contest, index, clashingWith }: ContestCardProps) 
               <CountdownTimer targetDate={contest.startTime} />
             )}
             {isLive && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 text-white border border-white/20">
+                <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
                 <span className="text-xs font-bold tracking-wider">LIVE NOW</span>
               </div>
             )}

@@ -33,7 +33,7 @@ const getDifficultyColor = (platform: string, diff: string | null, rating: numbe
       if (rating < 400) return 'text-[#808080]'; // Gray
       if (rating < 800) return 'text-[#804000]'; // Brown
       if (rating < 1200) return 'text-[#008000]'; // Green
-      if (rating < 1600) return 'text-[#00C0C0]'; // Cyan
+      if (rating < 1600) return 'text-[#00C0C0]'; // teal
       if (rating < 2000) return 'text-[#0000FF]'; // Blue
       if (rating < 2400) return 'text-[#C0C000]'; // Yellow
       if (rating < 2800) return 'text-[#FF8000]'; // Orange
@@ -68,7 +68,7 @@ export const ProblemTable: React.FC<ProblemTableProps> = ({ problems, loading, p
       <div className="w-full relative">
         {loading && (
           <div className="absolute inset-0 bg-[var(--color-void)]/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-[var(--color-brand-blue)] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
           </div>
         )}
         
@@ -105,7 +105,7 @@ export const ProblemTable: React.FC<ProblemTableProps> = ({ problems, loading, p
                         <div className="w-5 flex-shrink-0 flex justify-center">
                           {isSolved && <LucideIcons.Check className="w-5 h-5 text-[#22c55e]" strokeWidth={3} />}
                         </div>
-                        <span className="text-[15px] font-medium text-[var(--color-text-primary)] hover:text-[var(--color-brand-blue)] transition-colors truncate" title={problem.name}>
+                        <span className="text-[15px] font-medium text-[var(--color-text-primary)] hover:text-white transition-colors truncate" title={problem.name}>
                           {index + 1 + (page * 20)}. {problem.name}
                         </span>
                       </div>

@@ -4,8 +4,8 @@ import React from 'react';
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: '#10b981',      // emerald-500
-  Medium: '#f59e0b',    // amber-500
+  Easy: '#10b981',      // white
+  Medium: '#f59e0b',    // slate-200
   Hard: '#ef4444',      // red-500
   Advanced: '#8b5cf6',  // violet-500
   Unknown: '#64748b',   // slate-500

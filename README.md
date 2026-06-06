@@ -1,95 +1,83 @@
-# CP Arena — Competitive Programming Aggregator
+# 🚀 CP Times
 
-A unified competitive programming aggregator and practice platform that brings together contests and problems from **Codeforces**, **LeetCode**, **CodeChef**, and **AtCoder** into a single, stunning dashboard.
+> **One platform to track them all.** A sleek, unified competitive programming aggregator built by developers, for developers. 
 
-![Phase](https://img.shields.io/badge/Phase-1%20%7C%20Contest%20Calendar-cyan)
-![Frontend](https://img.shields.io/badge/Frontend-Next.js%2015-black)
-![Backend](https://img.shields.io/badge/Backend-Spring%20Boot%203-green)
-![Database](https://img.shields.io/badge/DB-MySQL%208.0-blue)
+Stop juggling between five different browser tabs just to see upcoming contests or find practice problems. **CP Times** brings together contests, problems, and user stats from **Codeforces**, **LeetCode**, **CodeChef**, and **AtCoder** into a single, beautifully designed dashboard.
 
-## ✨ Features (Phase 1)
+---
 
-- **Universal Contest Calendar** — Aggregated upcoming, live, and past contests from all 4 platforms
-- **Platform Filters** — Toggle which platforms to show with smooth animations
-- **Live Countdown Timers** — Real-time countdown to contest start with urgent styling
-- **Google Calendar Integration** — One-click add to your Google Calendar
-- **Premium Dark UI** — Glassmorphism design with Framer Motion animations
+## 🌟 Why build this?
 
-## 🏗️ Architecture
+As competitive programmers, we love solving problems. But we *hate* having to check multiple sites to see when the next contest starts, or tracking our stats across different platforms. 
 
-```
-CP-Aggregator/
-├── frontend/          # Next.js 15 + Tailwind v4 + Framer Motion
-├── backend/           # Spring Boot 3 + JPA + MySQL
-├── docker-compose.yml # MySQL container
-└── README.md
-```
+We built **CP Times** to be the ultimate home base for coders. It features a stunning, glassmorphic dark-mode UI with smooth animations that makes tracking your competitive programming journey actually enjoyable.
 
-## 🚀 Quick Start
+## ✨ Features That Kick Ass
+
+- **🗓 Universal Contest Calendar**: Never miss a rated round again. View upcoming and live contests from all major platforms in one unified timeline. Add them directly to your Google Calendar with one click!
+- **⚔️ Practice Arena**: Filter thousands of problems by platform, difficulty, and tags. Whether you want an easy LeetCode string problem or a 2000-rated Codeforces graph challenge, find it in seconds.
+- **📊 Developer Identity (Profiles)**: Link your handles from different platforms to aggregate your total solved problems, global ranking, and see your performance stats in one unified developer profile.
+- **😎 Custom Avatars**: Drop in your favorite image to customize your profile. (We auto-compress and resize it in your browser so it's lightning fast!).
+- **🏆 Global Leaderboard**: See how you stack up against other users on the platform.
+
+## 🛠 Tech Stack
+
+We pivoted from a clunky Java backend to a sleek, modern full-stack TypeScript architecture.
+
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Styling**: Tailwind CSS v4 + Framer Motion (for those buttery smooth animations)
+- **Database**: PostgreSQL (hosted on [Neon](https://neon.tech/))
+- **ORM**: Prisma
+- **Authentication**: JWT-based custom auth with bcrypt
+- **Deployment**: Vercel
+
+## 🚀 Getting Started Locally
+
+Want to hack on CP Times? It's incredibly easy to spin up.
 
 ### Prerequisites
+- Node.js 18+
+- A PostgreSQL database string (Neon, Supabase, or local)
 
-- **Node.js 18+** and **npm**
-- **Java 17+** and **Maven**
-- **Docker** (for MySQL) or MySQL 8.0 installed natively
+### Setup
 
-### 1. Start the Database
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/CyberKun/CP-Aggregator.git
+   cd CP-Aggregator/frontend
+   ```
 
-```bash
-docker compose up -d
-```
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-Or if you have MySQL installed natively, create the database:
+3. **Set up your Environment Variables**
+   Create a `.env` file in the `frontend` directory and add your database URL:
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/cptimes"
+   JWT_SECRET="your-super-secret-key-change-in-production"
+   ```
 
-```sql
-CREATE DATABASE cp_aggregator CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+4. **Sync the Database**
+   Push the Prisma schema to your database and generate the client:
+   ```bash
+   npx prisma db push
+   npx prisma generate
+   ```
 
-### 2. Start the Backend
+5. **Fire it up!**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) and start coding!
 
-```bash
-cd backend
-mvn spring-boot:run
-```
+---
 
-The API will be available at `http://localhost:8080/api`.
+## 🤝 Contributing
 
-### 3. Start the Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The app will be available at `http://localhost:3000`.
-
-## 📡 API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/contests` | List all contests (optional: `?platforms=CODEFORCES,LEETCODE&phases=BEFORE`) |
-| `GET` | `/api/contests/upcoming` | Upcoming contests only |
-| `GET` | `/api/contests/live` | Currently active contests |
-| `GET` | `/api/contests/{id}` | Single contest details |
-| `POST` | `/api/contests/refresh` | Trigger manual data refresh |
-
-## 🎨 Design
-
-- **Theme**: Premium dark mode with glassmorphism
-- **Colors**: Deep void backgrounds with cyan/blue/purple accent gradients
-- **Animations**: Hardware-accelerated via Framer Motion
-- **Typography**: Inter (Google Fonts)
-- **Platform Accents**: Codeforces (Blue), LeetCode (Orange), CodeChef (Brown), AtCoder (Green)
-
-## 🗺️ Roadmap
-
-- [x] **Phase 1**: Contest Calendar
-- [ ] **Phase 2**: Problem Discovery & Filtering Matrix
-- [ ] **Phase 3**: Multi-Platform Profile Linking
-- [ ] **Phase 4**: Practice Analyzer & Stats
-- [ ] **Phase 5**: Leaderboards & Peer Battles
+Found a bug? Want to add support for HackerRank or TopCoder? PRs are incredibly welcome! Feel free to open an issue or submit a pull request. Let's build the best CP tool together.
 
 ## 📄 License
 
-University project — 3rd year, 2026.
+Built with ❤️ for a university project. 

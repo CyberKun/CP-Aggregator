@@ -61,6 +61,8 @@ export const authApi = {
 
 export const userApi = {
   getMe: () => api.get<any>('/user'),
+  updateProfile: (data: any) => api.put<any>('/user', data),
+  updatePassword: (data: any) => api.put<any>('/user/password', data),
   linkPlatform: (data: { platform: string; handle: string }) => api.post<any>('/user/platforms', data),
   syncData: () => api.post<any>('/user/sync'),
 };

@@ -2,23 +2,20 @@
 
 import React, { useState } from 'react';
 import { Platform } from '@/types';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { DualSlider } from '@/components/ui/DualSlider';
 import { PLATFORM_MAP, PLATFORMS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import { X, LayoutGrid } from 'lucide-react';
+import { X, LayoutGrid, Swords } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { DifficultyTier } from '@/hooks/useProblems';
 
 interface ProblemFilterPanelProps {
   filters: {
     platforms: Platform[];
-    difficulties?: string[];
+    tier: DifficultyTier;
     tags?: string[];
-    minRating?: number;
-    maxRating?: number;
     status?: 'all' | 'solved' | 'unsolved';
   };
-  updateFilters: (filters: any) => void;
+  updateFilters: (filters: Partial<ProblemFilterPanelProps['filters']>) => void;
 }
 
 export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters, updateFilters }) => {
@@ -34,21 +31,16 @@ export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters,
     .filter(tag => tag.includes(tagInput.toLowerCase()) && !(filters.tags || []).includes(tag))
     .slice(0, 5);
 
-  // Now enforces a single platform selection and resets rating bounds
   const handlePlatformSelect = (platform: Platform) => {
-    updateFilters({ 
-      platforms: [platform],
-      minRating: getMinDefault(platform),
-      maxRating: getMaxDefault(platform)
-    });
-  };
-
-  const handleDifficultyToggle = (diff: string) => {
-    const currentDiffs = filters.difficulties || [];
-    const newDiffs = currentDiffs.includes(diff)
-      ? currentDiffs.filter((d) => d !== diff)
-      : [...currentDiffs, diff];
-    updateFilters({ difficulties: newDiffs });
+    const current = filters.platforms || [];
+    let newPlatforms;
+    if (current.includes(platform)) {
+      if (current.length === 1) return; // Prevent deselecting the last platform
+      newPlatforms = current.filter(p => p !== platform);
+    } else {
+      newPlatforms = [...current, platform];
+    }
+    updateFilters({ platforms: newPlatforms });
   };
 
   const handleTagAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -68,154 +60,25 @@ export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters,
     updateFilters({ tags: currentTags.filter((t) => t !== tag) });
   };
 
-  // Only the first platform is active
-  const usesRating = ['CODEFORCES', 'ATCODER', 'CODECHEF'].includes(activePlatform);
-  const isLC = activePlatform === 'LEETCODE';
-
-  const getRatingOptions = (platform: string) => {
-    switch (platform) {
-      case 'CODEFORCES': return Array.from({ length: 28 }, (_, i) => 800 + i * 100);
-      case 'ATCODER': return Array.from({ length: 41 }, (_, i) => i * 100);
-      case 'CODECHEF': return Array.from({ length: 51 }, (_, i) => i * 100);
-      default: return [];
-    }
-  };
-
-  const getMinDefault = (platform: string) => platform === 'CODEFORCES' ? 800 : 0;
-  const getMaxDefault = (platform: string) => {
-    if (platform === 'CODEFORCES') return 3500;
-    if (platform === 'ATCODER') return 4000;
-    return 5000;
-  };
-
-  const ratingOptions = getRatingOptions(activePlatform);
+  const tiers: { level: DifficultyTier, label: string, color: string }[] = [
+    { level: 1, label: 'Beginner', color: 'from-slate-100 to-emerald-600' },
+    { level: 2, label: 'Novice', color: 'from-slate-300 to-teal-600' },
+    { level: 3, label: 'Intermediate', color: 'from-blue-400 to-blue-600' },
+    { level: 4, label: 'Advanced', color: 'from-slate-100 to-emerald-600' },
+    { level: 5, label: 'Expert', color: 'from-purple-400 to-purple-600' },
+  ];
 
   return (
-    <div className="w-full max-w-[280px] flex-shrink-0 flex flex-col gap-8 p-6 rounded-2xl bg-[var(--color-panel)] border border-[var(--color-border)] backdrop-blur-xl">
+    <div className="w-full max-w-[280px] flex-shrink-0 flex flex-col gap-8 p-6 rounded-3xl glass-surface border border-[var(--color-border)] shadow-xl relative overflow-hidden">
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-slate-200 rounded-full mix-blend-screen filter blur-[50px] opacity-10"></div>
+      
+      {/* BATTLE TAGS SECTION (MOVED TO TOP) */}
       <div>
-        <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-secondary)] mb-4 flex items-center gap-2">
-          <LayoutGrid className="w-3.5 h-3.5" />
-          Select Platform
+        <h3 className="text-xs uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-4 flex items-center gap-2">
+          <svg className="w-4 h-4 text-slate-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+          Battle Tags
         </h3>
-        <div className="flex flex-col gap-2.5">
-          {PLATFORMS.map((platformInfo) => {
-            const p = platformInfo.key as Platform;
-            const info = PLATFORM_MAP[p];
-            const isSelected = activePlatform === p;
-            return (
-              <button
-                key={p}
-                onClick={() => handlePlatformSelect(p)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all duration-300 text-sm font-medium",
-                  isSelected 
-                    ? "bg-[var(--color-elevated)] border-[var(--color-border)] text-[var(--color-text-primary)] shadow-[0_0_15px_rgba(0,0,0,0.2)]" 
-                    : "bg-transparent border-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-primary)]"
-                )}
-              >
-                <div 
-                  className="w-2 h-2 rounded-full transition-transform duration-300" 
-                  style={{ 
-                    backgroundColor: info?.color,
-                    boxShadow: isSelected ? `0 0 8px ${info?.color}` : 'none',
-                    transform: isSelected ? 'scale(1.2)' : 'scale(1)'
-                  }} 
-                />
-                {info?.name || p}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="h-px w-full bg-[var(--color-border)]" />
-
-      <div>
-        <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-secondary)] mb-4">
-          Status
-        </h3>
-        <div className="flex bg-[var(--color-void)] p-1 rounded-xl border border-[var(--color-border)]">
-          {['all', 'unsolved', 'solved'].map((s) => (
-            <button
-              key={s}
-              onClick={() => updateFilters({ status: s })}
-              className={cn(
-                "flex-1 text-xs font-medium py-1.5 rounded-lg capitalize transition-all",
-                (filters.status || 'all') === s 
-                  ? "bg-[var(--color-elevated)] text-[var(--color-text-primary)] shadow-sm" 
-                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-elevated)]"
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="h-px w-full bg-[var(--color-border)]" />
-
-      {/* Platform-specific filters */}
-      <motion.div
-        key={activePlatform}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {usesRating && (
-          <div>
-            <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-secondary)] mb-4">
-              Rating Range
-            </h3>
-            <div className="flex items-center gap-2">
-              <select
-                value={filters.minRating || getMinDefault(activePlatform)}
-                onChange={(e) => updateFilters({ minRating: parseInt(e.target.value) })}
-                className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-2 py-2 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-brand-blue)] appearance-none cursor-pointer"
-              >
-                {ratingOptions.map(rating => (
-                  <option key={`min-${rating}`} value={rating} className="bg-[var(--color-void)]">{rating}</option>
-                ))}
-              </select>
-              <span className="text-[var(--color-text-secondary)] text-sm">to</span>
-              <select
-                value={filters.maxRating || getMaxDefault(activePlatform)}
-                onChange={(e) => updateFilters({ maxRating: parseInt(e.target.value) })}
-                className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-2 py-2 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-brand-blue)] appearance-none cursor-pointer"
-              >
-                {ratingOptions.map(rating => (
-                  <option key={`max-${rating}`} value={rating} className="bg-[var(--color-void)]">{rating}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {isLC && (
-          <div>
-            <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-secondary)] mb-4">
-              Difficulty
-            </h3>
-            <div className="flex flex-col gap-3">
-              {['EASY', 'MEDIUM', 'HARD'].map((diff) => (
-                <Checkbox
-                  key={diff}
-                  label={diff.charAt(0) + diff.slice(1).toLowerCase()}
-                  checked={(filters.difficulties || []).includes(diff)}
-                  onCheckedChange={() => handleDifficultyToggle(diff)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </motion.div>
-
-      <div className="h-px w-full bg-[var(--color-border)]" />
-
-      <div>
-        <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-secondary)] mb-4">
-          Tags
-        </h3>
-        <div className="relative mb-4">
+        <div className="relative mb-4 z-50">
           <input
             type="text"
             value={tagInput}
@@ -226,15 +89,15 @@ export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters,
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             onKeyDown={handleTagAdd}
-            placeholder="e.g. dp, greedy (Press Enter)"
-            className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-brand-blue)] focus:bg-[var(--color-elevated)] transition-all"
+            placeholder="e.g. dp, graphs (Enter)"
+            className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-secondary)] focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 transition-all shadow-inner"
           />
           {showSuggestions && suggestedTags.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 max-h-[160px] overflow-y-auto bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl shadow-2xl z-50 p-1">
+            <div className="absolute top-full left-0 right-0 mt-2 max-h-[160px] overflow-y-auto bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl shadow-2xl z-[100] p-1">
               {suggestedTags.map((tag) => (
                 <button
                   key={tag}
-                  onMouseDown={(e) => e.preventDefault()} // Prevent blur from firing before click
+                  onMouseDown={(e) => e.preventDefault()} 
                   onClick={() => {
                     const currentTags = filters.tags || [];
                     if (!currentTags.includes(tag)) {
@@ -243,7 +106,7 @@ export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters,
                     setTagInput('');
                     setShowSuggestions(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-elevated)] rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-elevated)] rounded-lg transition-colors"
                 >
                   {tag}
                 </button>
@@ -251,22 +114,119 @@ export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters,
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 relative z-10">
           {(filters.tags || []).map((tag) => (
             <motion.span
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               key={tag}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-elevated)] hover:bg-red-500/20 hover:text-red-400 border border-transparent text-xs font-medium text-[var(--color-text-primary)] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-void)] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 border border-[var(--color-border)] text-xs font-bold tracking-wide text-[var(--color-text-primary)] transition-colors cursor-pointer shadow-sm"
               onClick={() => handleTagRemove(tag)}
               title="Click to remove"
             >
               {tag}
-              <X className="w-3 h-3 opacity-50" />
+              <X className="w-3 h-3 opacity-70" />
             </motion.span>
           ))}
         </div>
       </div>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+
+      {/* PLATFORMS SECTION */}
+      <div>
+        <h3 className="text-xs uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-4 flex items-center gap-2">
+          <LayoutGrid className="w-4 h-4 text-slate-300" />
+          Platforms
+        </h3>
+        <div className="flex flex-col gap-2.5 relative z-10">
+          {PLATFORMS.map((platformInfo) => {
+            const p = platformInfo.key as Platform;
+            const info = PLATFORM_MAP[p];
+            const isSelected = (filters.platforms || []).includes(p);
+            return (
+              <button
+                key={p}
+                onClick={() => handlePlatformSelect(p)}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-300 text-sm font-bold tracking-wide",
+                  isSelected 
+                    ? "bg-[var(--color-void)] border-slate-200 text-[var(--color-text-primary)] shadow-[0_0_10px_rgba(255,255,255,0.1)]" 
+                    : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-void)]/50 hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                <div 
+                  className="w-2.5 h-2.5 rounded-full transition-transform duration-300" 
+                  style={{ 
+                    backgroundColor: info?.color,
+                    boxShadow: isSelected ? `0 0 10px ${info?.color}` : 'none',
+                    transform: isSelected ? 'scale(1.2)' : 'scale(1)'
+                  }} 
+                />
+                {info?.name || p}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+
+      <div>
+        <h3 className="text-xs uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-4 flex items-center gap-2">
+          <Swords className="w-4 h-4 text-slate-100" />
+          Difficulty Tier
+        </h3>
+        <div className="flex flex-col gap-2 relative z-10">
+          {tiers.map((t) => {
+            const isSelected = filters.tier === t.level;
+            return (
+              <button
+                key={t.level}
+                onClick={() => updateFilters({ tier: t.level })}
+                className={cn(
+                  "relative overflow-hidden flex items-center justify-between px-4 py-2.5 rounded-xl border transition-all duration-300 text-sm font-bold tracking-wide",
+                  isSelected 
+                    ? `bg-[var(--color-void)] border-[var(--color-border)] text-white shadow-lg` 
+                    : "bg-transparent border-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-void)]/50 hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                {isSelected && (
+                  <div className={`absolute inset-0 bg-gradient-to-r ${t.color} opacity-20`} />
+                )}
+                <span className="relative z-10">{t.label}</span>
+                <span className="relative z-10 text-xs opacity-50 font-mono">T{t.level}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+
+      <div>
+        <h3 className="text-xs uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-4">
+          Status Filters
+        </h3>
+        <div className="flex bg-[var(--color-void)] p-1.5 rounded-xl border border-[var(--color-border)] shadow-inner relative z-10">
+          {['all', 'unsolved', 'solved'].map((s) => (
+            <button
+              key={s}
+              onClick={() => updateFilters({ status: s as any })}
+              className={cn(
+                "flex-1 text-[11px] font-bold py-2 rounded-lg uppercase tracking-wider transition-all",
+                (filters.status || 'all') === s 
+                  ? "bg-[var(--color-elevated)] text-slate-300 shadow-md" 
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-elevated)]"
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+
     </div>
   );
 };

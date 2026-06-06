@@ -11,7 +11,7 @@ export function Leaderboard() {
       </div>
 
       <div className="bg-[#2a2a2a] rounded-lg p-1 flex mb-8">
-        <button className="flex-1 bg-transparent text-[var(--color-brand-blue)] font-medium py-1.5 rounded-md text-sm">Users</button>
+        <button className="flex-1 bg-transparent text-white font-medium py-1.5 rounded-md text-sm">Users</button>
         <button className="flex-1 text-gray-400 font-medium py-1.5 rounded-md text-sm hover:text-gray-300">Institutes</button>
       </div>
 

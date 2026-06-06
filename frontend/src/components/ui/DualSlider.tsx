@@ -77,8 +77,8 @@ export const DualSlider: React.FC<DualSliderProps> = ({ min, max, value, onChang
         onChange={handleMinChange}
         className={cn(
           "pointer-events-none absolute w-full h-1 appearance-none bg-transparent outline-none z-30",
-          "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:cursor-pointer",
-          "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-cyan-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
+          "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-slate-300 [&::-webkit-slider-thumb]:cursor-pointer",
+          "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-slate-300 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
         )}
       />
       <input
@@ -90,13 +90,13 @@ export const DualSlider: React.FC<DualSliderProps> = ({ min, max, value, onChang
         onChange={handleMaxChange}
         className={cn(
           "pointer-events-none absolute w-full h-1 appearance-none bg-transparent outline-none z-40",
-          "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:cursor-pointer",
-          "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-cyan-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
+          "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-slate-300 [&::-webkit-slider-thumb]:cursor-pointer",
+          "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-slate-300 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
         )}
       />
 
       <div className="relative w-full h-1 bg-white/10 rounded-full z-10">
-        <div ref={range} className="absolute h-1 bg-cyan-500 rounded-full z-20" />
+        <div ref={range} className="absolute h-1 bg-slate-200 rounded-full z-20" />
       </div>
       
       <style dangerouslySetInnerHTML={{__html: `

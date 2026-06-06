@@ -37,7 +37,7 @@ export function TagRadarChart({ data }: { data: { name: string; value: number }[
             <Radar
               name="Solved"
               dataKey="value"
-              stroke="#06b6d4" // cyan-500
+              stroke="#06b6d4" // slate-200
               fill="#06b6d4"
               fillOpacity={0.4}
             />

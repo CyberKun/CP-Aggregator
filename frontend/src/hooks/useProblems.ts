@@ -1,124 +1,122 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { problemApi } from '@/lib/api';
 import type { Problem, ProblemFilterRequest, Platform } from '@/types';
 
 const USE_MOCK = false;
 
-const MOCK_CF_PROBLEMS: Problem[] = Array.from({ length: 45 }).map((_, i) => ({
-  id: 1000 + i,
-  externalId: `1900${String.fromCharCode(65 + (i % 26))}`,
-  platform: 'CODEFORCES',
-  name: `Codeforces Problem ${i + 1}`,
-  url: `https://codeforces.com/problemset/problem/1900/${String.fromCharCode(65 + (i % 26))}`,
-  rating: 800 + (i % 28) * 100,
-  difficulty: null,
-  solvedCount: 15000 - i * 100,
-  tags: ['implementation', 'math', 'greedy'].slice(0, (i % 3) + 1),
-}));
+// 1: Beginner, 2: Novice, 3: Intermediate, 4: Advanced, 5: Expert
+export type DifficultyTier = 1 | 2 | 3 | 4 | 5;
 
-const MOCK_LC_PROBLEMS: Problem[] = Array.from({ length: 45 }).map((_, i) => ({
-  id: 2000 + i,
-  externalId: `${i + 1}`,
-  platform: 'LEETCODE',
-  name: `LeetCode Problem ${i + 1}`,
-  url: `https://leetcode.com/problems/problem-${i + 1}`,
-  rating: null,
-  difficulty: i % 3 === 0 ? 'Easy' : i % 3 === 1 ? 'Medium' : 'Hard',
-  solvedCount: 50000 - i * 200,
-  tags: ['array', 'hash-table', 'dynamic-programming'].slice(0, (i % 3) + 1),
-}));
+function getTierMapping(platform: Platform, tier: DifficultyTier) {
+  if (platform === 'CODEFORCES') {
+    switch(tier) {
+      case 1: return { minRating: 800, maxRating: 1100 };
+      case 2: return { minRating: 1200, maxRating: 1500 };
+      case 3: return { minRating: 1600, maxRating: 1900 };
+      case 4: return { minRating: 2000, maxRating: 2300 };
+      case 5: return { minRating: 2400, maxRating: 3500 };
+    }
+  }
+  if (platform === 'LEETCODE') {
+    switch(tier) {
+      case 1: return { difficulties: ['EASY'] };
+      case 2: return { difficulties: ['EASY'] };
+      case 3: return { difficulties: ['MEDIUM'] };
+      case 4: return { difficulties: ['MEDIUM', 'HARD'] };
+      case 5: return { difficulties: ['HARD'] };
+    }
+  }
+  if (platform === 'ATCODER') {
+    switch(tier) {
+      case 1: return { minRating: 0, maxRating: 399 };
+      case 2: return { minRating: 400, maxRating: 799 };
+      case 3: return { minRating: 800, maxRating: 1599 };
+      case 4: return { minRating: 1600, maxRating: 2399 };
+      case 5: return { minRating: 2400, maxRating: 4000 };
+    }
+  }
+  if (platform === 'CODECHEF') {
+    switch(tier) {
+      case 1: return { minRating: 0, maxRating: 1399 };
+      case 2: return { minRating: 1400, maxRating: 1599 };
+      case 3: return { minRating: 1600, maxRating: 1799 };
+      case 4: return { minRating: 1800, maxRating: 2199 };
+      case 5: return { minRating: 2200, maxRating: 5000 };
+    }
+  }
+  return {};
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export function useProblems() {
-  const [problems, setProblems] = useState<Problem[]>([]);
+  const [displayedProblems, setDisplayedProblems] = useState<Problem[]>([]);
+  const [fetchedPool, setFetchedPool] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
   const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
 
-  // Default to a single platform
-  const [filters, setFilters] = useState<Omit<ProblemFilterRequest, 'page' | 'size'>>({
+  // Default Forge filters
+  const [filters, setFilters] = useState<{
+    platforms: Platform[];
+    tier: DifficultyTier;
+    tags?: string[];
+    status?: 'all' | 'solved' | 'unsolved';
+  }>({
     platforms: ['CODEFORCES'],
-    difficulties: [],
+    tier: 2,
     tags: [],
-    minRating: 800,
-    maxRating: 3500,
-    status: 'all',
+    status: 'unsolved',
   });
-
-  const [page, setPage] = useState(0);
-  const pageSize = 20;
 
   const fetchProblems = useCallback(async () => {
     try {
       setLoading(true);
       
-      if (USE_MOCK) {
-        await new Promise(res => setTimeout(res, 300));
-        let mockData = [...MOCK_CF_PROBLEMS, ...MOCK_LC_PROBLEMS];
-        
-        // Filter by single platform
-        const activePlatform = filters.platforms[0];
-        mockData = mockData.filter(p => p.platform === activePlatform);
-        
-        // Filter by CF rating
-        if (activePlatform === 'CODEFORCES' && filters.minRating !== undefined && filters.maxRating !== undefined) {
-          mockData = mockData.filter(p => p.rating! >= filters.minRating! && p.rating! <= filters.maxRating!);
-        }
+      const promises = filters.platforms.map(platform => {
+        const tierMapping = getTierMapping(platform, filters.tier);
+        const apiFilters: any = {
+          platforms: [platform],
+          tags: filters.tags,
+          status: filters.status === 'all' ? undefined : filters.status,
+          ...tierMapping,
+        };
 
-        // Filter by LC difficulty
-        if (activePlatform === 'LEETCODE' && filters.difficulties && filters.difficulties.length > 0) {
-          mockData = mockData.filter(p => filters.difficulties!.includes(p.difficulty!));
-        }
-        
-        // Filter by tags
-        if (filters.tags && filters.tags.length > 0) {
-          mockData = mockData.filter(p => p.tags.some(tag => filters.tags!.includes(tag)));
-        }
-
-        const start = page * pageSize;
-        const pagedData = mockData.slice(start, start + pageSize);
-
-        setProblems(pagedData);
-        setTotalPages(Math.ceil(mockData.length / pageSize) || 1);
-      } else {
-        const apiFilters = { ...filters };
-        const activePlatform = filters.platforms[0];
-        const usesRating = ['CODEFORCES', 'ATCODER', 'CODECHEF'].includes(activePlatform);
-        
-        const isDefaultMin = 
-          (activePlatform === 'CODEFORCES' && filters.minRating === 800) ||
-          (activePlatform !== 'CODEFORCES' && filters.minRating === 0);
-          
-        const isDefaultMax = 
-          (activePlatform === 'CODEFORCES' && filters.maxRating === 3500) ||
-          (activePlatform === 'ATCODER' && filters.maxRating === 4000) ||
-          (activePlatform === 'CODECHEF' && filters.maxRating === 5000);
-
-        if (!usesRating || (isDefaultMin && isDefaultMax)) {
-          delete apiFilters.minRating;
-          delete apiFilters.maxRating;
-        }
-
-        const response = await problemApi.search({
+        return problemApi.search({
           ...apiFilters,
-          page: page,
-          size: pageSize,
+          page: 0,
+          size: 50, // Fetch up to 50 problems per platform to build a good random pool
+        }).then(res => res.data.content).catch(err => {
+          console.error(`Failed to fetch for ${platform}`, err);
+          return [];
         });
+      });
 
-        const { content, totalPages } = response.data;
-        setProblems(content);
-        setTotalPages(totalPages || 1);
-        
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const { userApi } = await import('@/lib/api');
-            const meRes = await userApi.getMe();
-            if (meRes.data && meRes.data.solvedProblemIds) {
-              setSolvedProblemIds(new Set(meRes.data.solvedProblemIds));
-            }
-          } catch (e) {
-            console.error("Failed to fetch solved problems", e);
+      const results = await Promise.all(promises);
+      const content = results.flat();
+      
+      setFetchedPool(content);
+      
+      // Instantly shuffle and pick 10
+      const shuffled = shuffleArray(content).slice(0, 10);
+      setDisplayedProblems(shuffled);
+      
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const { userApi } = await import('@/lib/api');
+          const meRes = await userApi.getMe();
+          if (meRes.data && meRes.data.solvedProblemIds) {
+            setSolvedProblemIds(new Set(meRes.data.solvedProblemIds));
           }
+        } catch (e) {
+          console.error("Failed to fetch solved problems", e);
         }
       }
     } catch (error) {
@@ -126,7 +124,7 @@ export function useProblems() {
     } finally {
       setLoading(false);
     }
-  }, [filters, page]);
+  }, [filters]);
 
   useEffect(() => {
     fetchProblems();
@@ -134,20 +132,28 @@ export function useProblems() {
 
   const updateFilters = (newFilters: Partial<typeof filters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-    setPage(0); // Reset to first page on filter change
   };
 
-  const nextPage = () => {
-    if (page < totalPages - 1) {
-      setPage(prev => prev + 1);
+  const shuffleProblems = () => {
+    // If the pool is empty, maybe re-fetch or just do nothing
+    if (fetchedPool.length > 0) {
+      setLoading(true);
+      setTimeout(() => {
+        const shuffled = shuffleArray(fetchedPool).slice(0, 10);
+        setDisplayedProblems(shuffled);
+        setLoading(false);
+      }, 400); // Small fake delay for UI effect
+    } else {
+      fetchProblems();
     }
   };
 
-  const prevPage = () => {
-    if (page > 0) {
-      setPage(prev => prev - 1);
-    }
+  return { 
+    problems: displayedProblems, 
+    loading, 
+    filters, 
+    updateFilters, 
+    shuffleProblems, 
+    solvedProblemIds 
   };
-
-  return { problems, loading, filters, updateFilters, page, totalPages, nextPage, prevPage, solvedProblemIds };
 }

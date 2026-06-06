@@ -3,15 +3,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { Sun, Moon, User, Menu, X } from 'lucide-react';
+import { User, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
 
 export function Topbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const pathname = usePathname();
-  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -37,7 +35,12 @@ export function Topbar() {
     <nav className="h-[72px] w-full bg-[var(--color-panel)] border-b border-[var(--color-border)] sticky top-0 z-50 flex items-center justify-between px-4 md:px-8">
       {/* Logo Area */}
       <Link href="/" className="flex items-center gap-3 group">
-        <span className="text-[var(--color-text-primary)] font-bold text-xl tracking-tight hidden sm:block">CP Times</span>
+        <img 
+          src="/logo.png" 
+          alt="CP Times Logo" 
+          className="h-12 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" 
+        />
+        <span className="text-[var(--color-text-primary)] font-bold text-xl tracking-tight hidden sm:block sr-only">CP Times</span>
       </Link>
 
       {/* Center Links */}
@@ -64,25 +67,21 @@ export function Topbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 md:gap-4">
-        {mounted && (
-          <button 
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors p-2 rounded-lg hover:bg-[var(--color-elevated)]"
-            title="Toggle theme"
-          >
-            {resolvedTheme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        )}
+
         
         {isAuthenticated ? (
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-              className="w-9 h-9 rounded-full bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-text-secondary)]"
+              className="w-9 h-9 rounded-full bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-text-secondary)] overflow-hidden"
             >
-              <span className="font-bold text-sm">
-                {user?.username?.charAt(0).toUpperCase() || 'U'}
-              </span>
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-bold text-sm">
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              )}
             </button>
 
             {/* Dropdown */}

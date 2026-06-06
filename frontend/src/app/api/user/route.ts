@@ -44,3 +44,36 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PUT(req: NextRequest) {
+  try {
+    const authUser = getUserFromRequest(req);
+    if (!authUser) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const data = await req.json();
+    const updateData: any = {};
+
+    if (data.username) updateData.username = data.username;
+    if (data.email) updateData.email = data.email;
+    if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl;
+    
+    if (data.password) {
+      const bcrypt = await import('bcryptjs');
+      updateData.password = await bcrypt.hash(data.password, 10);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: authUser.sub },
+      data: updateData,
+    });
+
+    const { password, ...userWithoutPassword } = updatedUser;
+    
+    return NextResponse.json({ message: 'Profile updated successfully', user: userWithoutPassword });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}

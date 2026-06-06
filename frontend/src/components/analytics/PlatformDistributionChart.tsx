@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 
 const PLATFORM_COLORS: Record<string, string> = {
   CODEFORCES: '#3b82f6', // blue-500
-  LEETCODE: '#f59e0b',   // amber-500
+  LEETCODE: '#f59e0b',   // slate-200
 };
 
 export function PlatformDistributionChart({ data }: { data: { name: string; value: number }[] }) {

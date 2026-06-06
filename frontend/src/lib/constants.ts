@@ -20,16 +20,16 @@ export const PLATFORMS: PlatformInfo[] = [
   {
     key: 'ATCODER',
     name: 'AtCoder',
-    color: '#222222', // Black/dark gray
+    color: '#8B5CF6', // Vibrant Violet
     icon: 'Triangle',
-    gradient: 'from-gray-700 to-gray-900',
+    gradient: 'from-violet-400 to-violet-600',
   },
   {
     key: 'CODECHEF',
     name: 'CodeChef',
-    color: '#5B4638', // Brown
+    color: '#10B981', // Vibrant Emerald Green
     icon: 'Hexagon',
-    gradient: 'from-amber-700 to-amber-900',
+    gradient: 'from-emerald-400 to-emerald-600',
   },
 ];
 

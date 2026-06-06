@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Topbar } from './Topbar';
-import { Footer } from './Footer';
 import { motion } from 'framer-motion';
 
 interface AppShellProps {
@@ -24,8 +23,6 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </motion.div>
       </main>
-      
-      <Footer />
     </div>
   );
 }
