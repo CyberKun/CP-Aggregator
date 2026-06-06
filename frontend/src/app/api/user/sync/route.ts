@@ -225,6 +225,46 @@ async function syncLeetCodeUser(userId: string, handle: string): Promise<number>
       console.error('LeetCode attempted contest sync error', e);
     }
 
+    // --- Heuristic for recent unrated contests ---
+    // LeetCode takes days to update ratings. If a user had an AC submission DURING a recent contest, they participated.
+    try {
+      if (data.submission && data.submission.length > 0) {
+        const recentContests = await prisma.contest.findMany({
+          where: {
+            platform: Platform.LEETCODE,
+            startTime: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+          }
+        });
+
+        const recentAttemptedIds = new Set<number>();
+        for (const sub of data.submission) {
+          const subTime = parseInt(sub.timestamp) * 1000;
+          for (const c of recentContests) {
+            const startTime = c.startTime.getTime();
+            const endTime = c.endTime ? c.endTime.getTime() : startTime + (c.durationSeconds * 1000);
+            if (subTime >= startTime && subTime <= endTime) {
+              recentAttemptedIds.add(c.id);
+            }
+          }
+        }
+
+        if (recentAttemptedIds.size > 0) {
+          await prisma.userAttemptedContest.createMany({
+            data: Array.from(recentAttemptedIds).map(contestId => ({
+              userId,
+              contestId,
+              platform: Platform.LEETCODE,
+              ratingChange: 0,
+              rank: null
+            })),
+            skipDuplicates: true
+          });
+        }
+      }
+    } catch (e) {
+      console.error('LeetCode recent submission heuristic error', e);
+    }
+
     // Update the solvedCount in UserPlatform
     await prisma.userPlatform.updateMany({
       where: { userId, platform: Platform.LEETCODE },
