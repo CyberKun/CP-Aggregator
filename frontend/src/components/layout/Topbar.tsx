@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Menu, X } from 'lucide-react';
+import { User, Menu, X, LogOut, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -86,23 +86,36 @@ export function Topbar() {
 
             {/* Dropdown */}
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
-                <div className="px-4 py-2 border-b border-[var(--color-border)]">
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{user?.username}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{user?.email}</p>
+              <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3 px-3 py-3 border-b border-[var(--color-border)] mb-2">
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center overflow-hidden shrink-0">
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-bold text-lg text-[var(--color-text-primary)]">
+                        {user?.username?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col overflow-hidden">
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{user?.username}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] truncate">{user?.email}</p>
+                  </div>
                 </div>
-                <div className="py-1">
-                  <Link href="/profile" className="block px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-primary)]">
-                    Profile
+                <div className="flex flex-col gap-1">
+                  <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-primary)] rounded-lg transition-colors">
+                    <Settings className="w-4 h-4" />
+                    <span>Profile Settings</span>
                   </Link>
                   <button 
                     onClick={() => {
                       logout();
                       setIsProfileDropdownOpen(false);
                     }} 
-                    className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-red-400 transition-colors"
+                    className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors"
                   >
-                    Logout
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>
