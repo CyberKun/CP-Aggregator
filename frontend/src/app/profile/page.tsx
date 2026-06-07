@@ -5,11 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { userApi } from '@/lib/api';
-import { Link as LinkIcon, RefreshCw, Trophy, Flame, Target, Hexagon, Camera } from 'lucide-react';
+import { Link as LinkIcon, RefreshCw, Trophy, Flame, Target, Hexagon, Camera, Trash2, ExternalLink } from 'lucide-react';
 import { PLATFORMS, PLATFORM_MAP } from '@/lib/constants';
 import { AppShell } from '@/components/layout/AppShell';
 import { getPlatformIcon } from '@/components/icons/PlatformIcons';
-import { getPlatformColor } from '@/lib/utils';
+import { getPlatformColor, cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, loading, refreshUser } = useAuth();
@@ -20,11 +20,9 @@ export default function ProfilePage() {
   const [isLinking, setIsLinking] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const [profileForm, setProfileForm] = useState({ username: '', email: '', avatarUrl: '' });
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +58,6 @@ export default function ProfilePage() {
           const dataUrl = canvas.toDataURL('image/webp', 0.8);
           setProfileForm(prev => ({ ...prev, avatarUrl: dataUrl }));
           
-          // Auto-save the new avatar immediately
           setIsUpdatingProfile(true);
           userApi.updateProfile({ ...profileForm, avatarUrl: dataUrl })
             .then(() => {
@@ -120,6 +117,20 @@ export default function ProfilePage() {
     }
   };
 
+  const handleUnlinkPlatform = async (platform: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to unlink ${platform}?`)) return;
+    
+    setMessage({ text: '', type: '' });
+    try {
+      await userApi.unlinkPlatform(platform);
+      setMessage({ text: 'Platform unlinked successfully!', type: 'success' });
+      await refreshUser();
+    } catch (err: any) {
+      setMessage({ text: err.response?.data?.message || 'Failed to unlink platform', type: 'error' });
+    }
+  };
+
   const handleSync = async () => {
     setIsSyncing(true);
     setMessage({ text: '', type: '' });
@@ -149,19 +160,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdatingPassword(true);
-    setMessage({ text: '', type: '' });
-    try {
-      await userApi.updatePassword(passwordForm);
-      setMessage({ text: 'Password updated successfully!', type: 'success' });
-      setPasswordForm({ currentPassword: '', newPassword: '' });
-    } catch (err: any) {
-      setMessage({ text: err.response?.data?.message || 'Failed to update password', type: 'error' });
-    } finally {
-      setIsUpdatingPassword(false);
+  const openPlatformProfile = (platform: string, handle: string) => {
+    let url = '';
+    switch (platform) {
+      case 'CODEFORCES': url = `https://codeforces.com/profile/${handle}`; break;
+      case 'LEETCODE': url = `https://leetcode.com/${handle}`; break;
+      case 'ATCODER': url = `https://atcoder.jp/users/${handle}`; break;
+      case 'CODECHEF': url = `https://www.codechef.com/users/${handle}`; break;
     }
+    if (url) window.open(url, '_blank');
   };
 
   return (
@@ -171,8 +178,6 @@ export default function ProfilePage() {
         <div className="w-full h-64 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 relative overflow-hidden border-b border-[var(--color-border)]">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-void)] to-transparent"></div>
-          
-          {/* Animated glowing orbs in banner */}
           <div className="absolute top-10 left-1/4 w-32 h-32 bg-slate-200 rounded-full mix-blend-screen filter blur-[60px] opacity-30 animate-pulse"></div>
           <div className="absolute top-20 right-1/4 w-40 h-40 bg-white rounded-full mix-blend-screen filter blur-[70px] opacity-20"></div>
         </div>
@@ -197,18 +202,17 @@ export default function ProfilePage() {
             className="hidden" 
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-surface rounded-3xl p-8 lg:p-12 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row gap-12"
+          >
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-300 via-white to-slate-100" />
             
-            {/* Left Column: User Identity & Stats */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
-              {/* Profile Card */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-300 via-white to-slate-100" />
-                
+            {/* Left Section: User Identity & Profile Form */}
+            <div className="w-full lg:w-1/3 flex flex-col gap-8">
+              
+              <div className="flex flex-col items-center text-center">
                 <div 
                   className="relative mb-6 group cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
@@ -243,7 +247,7 @@ export default function ProfilePage() {
                   <Target className="w-4 h-4" /> {user?.email}
                 </p>
 
-                <div className="w-full p-5 rounded-2xl bg-[var(--color-void)]/50 border border-[var(--color-border)] shadow-inner flex items-center justify-between">
+                <div className="w-full p-5 rounded-2xl bg-[var(--color-void)]/50 border border-[var(--color-border)] shadow-inner flex items-center justify-between mb-8">
                   <div className="text-left">
                     <p className="text-xs uppercase tracking-widest text-[var(--color-text-muted)] font-bold mb-1">Total Solved</p>
                     <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-300 drop-shadow-md">
@@ -254,223 +258,169 @@ export default function ProfilePage() {
                     <Trophy className="w-7 h-7 text-slate-100" />
                   </div>
                 </div>
-              </motion.div>
+              </div>
+
+              {/* Profile Details Form */}
+              <form onSubmit={handleUpdateProfile} className="flex flex-col gap-4">
+                <h3 className="text-sm uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-2">
+                  Profile Details
+                </h3>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Username</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileForm.username}
+                    onChange={(e) => setProfileForm({ ...profileForm, username: e.target.value })}
+                    className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 transition-colors"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isUpdatingProfile}
+                  className="mt-2 py-3 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] text-sm font-bold tracking-wide transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdatingProfile ? 'UPDATING...' : 'UPDATE PROFILE'}
+                </button>
+              </form>
+
             </div>
 
-            {/* Right Column: Linked Platforms & Linking */}
-            <div className="lg:col-span-8 flex flex-col gap-6">
+            {/* Right Section: Personal information & Linked Platforms */}
+            <div className="w-full lg:w-2/3 flex flex-col">
               
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="glass-surface rounded-3xl p-8"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Developer Identity</h2>
-                    <p className="text-[var(--color-text-secondary)] text-sm mt-1">Manage your connected competitive programming profiles</p>
-                  </div>
-                  <button 
-                    onClick={handleSync}
-                    disabled={isSyncing}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--color-void)] hover:bg-[var(--color-border)] border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-primary)] transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-slate-300' : 'text-[var(--color-text-secondary)] group-hover:text-slate-300 transition-colors'}`} />
-                    {isSyncing ? 'SYNCING NEURAL NET...' : 'SYNC ALL DATA'}
-                  </button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Personal information</h2>
+                  <p className="text-[var(--color-text-secondary)] text-sm mt-1">Manage your connected competitive programming profiles</p>
                 </div>
+                <button 
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--color-void)] hover:bg-[var(--color-border)] border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-primary)] transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-slate-300' : 'text-[var(--color-text-secondary)] group-hover:text-slate-300 transition-colors'}`} />
+                  {isSyncing ? 'SYNCING...' : 'SYNC ALL DATA'}
+                </button>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                  {user?.platforms && user.platforms.length > 0 ? (
-                    user.platforms.map((p) => {
-                      const info = PLATFORM_MAP[p.platform];
-                      return (
-                        <div key={p.platform} className="group relative overflow-hidden rounded-2xl bg-[var(--color-void)]/40 border border-[var(--color-border)] hover:border-[var(--color-border-hover)] transition-colors p-5 flex flex-col h-full">
-                          <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: info?.color || '#ffffff' }}></div>
-                          
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-[var(--color-panel)] flex items-center justify-center border border-[var(--color-border)] shadow-inner" style={{ boxShadow: `inset 0 0 10px ${info?.color}20` }}>
-                              <div style={{ color: getPlatformColor(p.platform) }}>
-                                {getPlatformIcon(p.platform, "w-6 h-6")}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] font-bold">{info?.name || p.platform}</p>
-                              <p className="text-lg font-bold text-[var(--color-text-primary)] tracking-tight">{p.handle}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-auto pt-4 border-t border-[var(--color-border)] flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
-                              <Flame className="w-3.5 h-3.5 text-slate-100" />
-                              Active
-                            </div>
-                            {p.syncedAt && (
-                              <div className="text-[10px] text-[var(--color-text-muted)] font-mono">
-                                {new Date(p.syncedAt).toLocaleDateString()} {new Date(p.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-border)] rounded-2xl bg-[var(--color-void)]/20">
-                      <div className="w-16 h-16 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4 text-slate-500">
-                        <LinkIcon className="w-8 h-8" />
-                      </div>
-                      <p className="text-[var(--color-text-primary)] font-bold text-lg mb-1">No platforms connected</p>
-                      <p className="text-[var(--color-text-secondary)] text-sm max-w-sm text-center">Link your coding profiles below to start aggregating your stats.</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-200/5 to-white/5 rounded-2xl" />
-                  <form onSubmit={handleLinkPlatform} className="relative p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/60">
-                    <h3 className="text-sm uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-5 flex items-center gap-2">
-                      <LinkIcon className="w-4 h-4" /> Link New Platform
-                    </h3>
-                    
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="relative sm:w-1/3">
-                        <select 
-                          value={selectedPlatform}
-                          onChange={(e) => setSelectedPlatform(e.target.value)}
-                          className="w-full bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl pl-4 pr-10 py-3.5 text-[var(--color-text-primary)] text-sm font-medium focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 appearance-none shadow-inner cursor-pointer"
-                        >
-                          {PLATFORMS.map(p => (
-                            <option key={p.key} value={p.key} className="bg-[var(--color-panel)] font-medium py-2">{p.name}</option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[var(--color-text-secondary)]">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
-                      
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter your platform handle"
-                        value={handle}
-                        onChange={(e) => setHandle(e.target.value)}
-                        className="flex-1 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl px-4 py-3.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-white focus:ring-1 focus:ring-white placeholder-[var(--color-text-muted)] shadow-inner transition-colors"
-                      />
-                      
-                      <button
-                        type="submit"
-                        disabled={isLinking}
-                        className="sm:w-32 py-3.5 bg-gradient-to-r from-slate-200 to-emerald-600 hover:from-slate-300 hover:to-white rounded-xl text-white text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                {user?.platforms && user.platforms.length > 0 ? (
+                  user.platforms.map((p) => {
+                    const info = PLATFORM_MAP[p.platform];
+                    return (
+                      <div 
+                        key={p.platform} 
+                        onClick={() => openPlatformProfile(p.platform, p.handle)}
+                        className="group relative overflow-hidden rounded-2xl bg-[var(--color-void)]/40 border border-[var(--color-border)] hover:border-[var(--color-border-hover)] transition-all hover:-translate-y-1 hover:shadow-lg cursor-pointer p-5 flex flex-col h-full"
                       >
-                        {isLinking ? 'LINKING...' : 'CONNECT'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </motion.div>
-
-              {/* Account Settings */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="glass-surface rounded-3xl p-8"
-              >
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Account Settings</h2>
-                  <p className="text-[var(--color-text-secondary)] text-sm mt-1">Update your profile credentials and avatar</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Profile Form */}
-                  <form onSubmit={handleUpdateProfile} className="flex flex-col gap-4">
-                    <h3 className="text-sm uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-2">
-                      Profile Details
-                    </h3>
-                    <div>
-                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Avatar</label>
-                      <div className="flex gap-2 items-center">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="flex items-center gap-2 px-4 py-2 bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl text-sm font-medium text-[var(--color-text-primary)] hover:border-slate-300 transition-colors"
+                        <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: info?.color || '#ffffff' }}></div>
+                        
+                        {/* Unlink Button */}
+                        <button 
+                          onClick={(e) => handleUnlinkPlatform(p.platform, e)}
+                          className="absolute top-4 right-4 p-1.5 rounded-md bg-transparent hover:bg-red-500/10 text-[var(--color-text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
+                          title="Unlink Platform"
                         >
-                          <Camera className="w-4 h-4" />
-                          Choose Image
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                        {profileForm.avatarUrl && profileForm.avatarUrl !== user?.avatarUrl && (
-                          <span className="text-xs text-emerald-400 font-medium">Image ready to save</span>
-                        )}
+
+                        <div className="absolute top-4 right-12 p-1.5 rounded-md text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-all z-10">
+                          <ExternalLink className="w-4 h-4" />
+                        </div>
+
+                        <div className="flex items-center gap-4 mb-4 mt-2">
+                          <div className="w-12 h-12 rounded-xl bg-[var(--color-panel)] flex items-center justify-center border border-[var(--color-border)] shadow-inner" style={{ boxShadow: `inset 0 0 10px ${info?.color}20` }}>
+                            <div style={{ color: getPlatformColor(p.platform) }}>
+                              {getPlatformIcon(p.platform, "w-6 h-6")}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] font-bold">{info?.name || p.platform}</p>
+                            <p className="text-lg font-bold text-[var(--color-text-primary)] tracking-tight">{p.handle}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-auto pt-4 border-t border-[var(--color-border)] flex items-center justify-between relative z-10">
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+                            <Flame className="w-3.5 h-3.5 text-slate-100" />
+                            Active
+                          </div>
+                          {p.syncedAt && (
+                            <div className="text-[10px] text-[var(--color-text-muted)] font-mono">
+                              {new Date(p.syncedAt).toLocaleDateString()} {new Date(p.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-border)] rounded-2xl bg-[var(--color-void)]/20">
+                    <div className="w-16 h-16 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4 text-slate-500">
+                      <LinkIcon className="w-8 h-8" />
+                    </div>
+                    <p className="text-[var(--color-text-primary)] font-bold text-lg mb-1">No platforms connected</p>
+                    <p className="text-[var(--color-text-secondary)] text-sm max-w-sm text-center">Link your coding profiles below to start aggregating your stats.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative mt-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-200/5 to-white/5 rounded-2xl" />
+                <form onSubmit={handleLinkPlatform} className="relative p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/60">
+                  <h3 className="text-sm uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-5 flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4" /> Link New Platform
+                  </h3>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative sm:w-1/3">
+                      <select 
+                        value={selectedPlatform}
+                        onChange={(e) => setSelectedPlatform(e.target.value)}
+                        className="w-full bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl pl-4 pr-10 py-3.5 text-[var(--color-text-primary)] text-sm font-medium focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 appearance-none shadow-inner cursor-pointer"
+                      >
+                        {PLATFORMS.map(p => (
+                          <option key={p.key} value={p.key} className="bg-[var(--color-panel)] font-medium py-2">{p.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[var(--color-text-secondary)]">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Username</label>
-                      <input
-                        type="text"
-                        required
-                        value={profileForm.username}
-                        onChange={(e) => setProfileForm({ ...profileForm, username: e.target.value })}
-                        className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={profileForm.email}
-                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                        className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-slate-200 focus:ring-1 focus:ring-slate-200 transition-colors"
-                      />
-                    </div>
+                    
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter your platform handle"
+                      value={handle}
+                      onChange={(e) => setHandle(e.target.value)}
+                      className="flex-1 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl px-4 py-3.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-white focus:ring-1 focus:ring-white placeholder-[var(--color-text-muted)] shadow-inner transition-colors"
+                    />
+                    
                     <button
                       type="submit"
-                      disabled={isUpdatingProfile}
-                      className="mt-2 py-2.5 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] text-sm font-bold tracking-wide transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isLinking}
+                      className="sm:w-32 py-3.5 bg-gradient-to-r from-slate-200 to-emerald-600 hover:from-slate-300 hover:to-white rounded-xl text-white text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isUpdatingProfile ? 'UPDATING...' : 'UPDATE PROFILE'}
+                      {isLinking ? 'LINKING...' : 'CONNECT'}
                     </button>
-                  </form>
+                  </div>
+                </form>
+              </div>
 
-                  {/* Password Form */}
-                  <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
-                    <h3 className="text-sm uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-2">
-                      Security
-                    </h3>
-                    <div>
-                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Current Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                        className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        className="w-full bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] text-sm focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors"
-                      />
-                    </div>
-                    <div className="flex-1"></div>
-                    <button
-                      type="submit"
-                      disabled={isUpdatingPassword}
-                      className="mt-2 py-2.5 bg-gradient-to-r from-red-500/20 to-white/20 hover:from-red-500/30 hover:to-white/30 border border-red-500/30 rounded-xl text-red-400 text-sm font-bold tracking-wide transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isUpdatingPassword ? 'UPDATING...' : 'CHANGE PASSWORD'}
-                    </button>
-                  </form>
-                </div>
-              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </AppShell>

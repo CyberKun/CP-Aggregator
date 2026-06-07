@@ -64,6 +64,7 @@ export const userApi = {
   updateProfile: (data: any) => api.put<any>('/user', data),
   updatePassword: (data: any) => api.put<any>('/user/password', data),
   linkPlatform: (data: { platform: string; handle: string }) => api.post<any>('/user/platforms', data),
+  unlinkPlatform: (platform: string) => api.delete<any>(`/user/platforms?platform=${platform}`),
   syncData: () => api.post<any>('/user/sync'),
 };
 
