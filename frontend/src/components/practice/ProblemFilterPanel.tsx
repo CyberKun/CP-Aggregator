@@ -201,32 +201,6 @@ export const ProblemFilterPanel: React.FC<ProblemFilterPanelProps> = ({ filters,
           })}
         </div>
       </div>
-
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
-
-      <div>
-        <h3 className="text-xs uppercase tracking-widest font-bold text-[var(--color-text-secondary)] mb-4">
-          Status Filters
-        </h3>
-        <div className="flex bg-[var(--color-void)] p-1.5 rounded-xl border border-[var(--color-border)] shadow-inner relative z-10">
-          {['all', 'unsolved', 'solved'].map((s) => (
-            <button
-              key={s}
-              onClick={() => updateFilters({ status: s as any })}
-              className={cn(
-                "flex-1 text-[11px] font-bold py-2 rounded-lg uppercase tracking-wider transition-all",
-                (filters.status || 'all') === s 
-                  ? "bg-[var(--color-elevated)] text-slate-300 shadow-md" 
-                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-elevated)]"
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-
     </div>
   );
 };

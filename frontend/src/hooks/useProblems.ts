@@ -62,91 +62,130 @@ export function useProblems() {
   const [loading, setLoading] = useState(true);
   const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
 
-  // Default Forge filters
   const [filters, setFilters] = useState<{
     platforms: Platform[];
     tier: DifficultyTier;
     tags?: string[];
-    status?: 'all' | 'solved' | 'unsolved';
   }>({
-    platforms: ['CODEFORCES'],
+    platforms: ['CODEFORCES'] as Platform[],
     tier: 2,
     tags: [],
-    status: 'unsolved',
   });
 
-  const fetchProblems = useCallback(async () => {
+  const isFirstMount = useRef(true);
+  const currentFilters = useRef(filters);
+
+  const fetchSolvedIds = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const { userApi } = await import('@/lib/api');
+      const meRes = await userApi.getMe();
+      if (meRes.data && meRes.data.solvedProblemIds) {
+        setSolvedProblemIds(new Set(meRes.data.solvedProblemIds));
+      }
+    } catch (e) {
+      console.error("Failed to fetch solved problems", e);
+    }
+  }, []);
+
+  const fetchProblemsFromApi = async (activeFilters: typeof filters) => {
     try {
       setLoading(true);
-      
-      const promises = filters.platforms.map(platform => {
-        const tierMapping = getTierMapping(platform, filters.tier);
+      const promises = activeFilters.platforms.map(platform => {
+        const tierMapping = getTierMapping(platform, activeFilters.tier);
         const apiFilters: any = {
           platforms: [platform],
-          tags: filters.tags,
-          status: filters.status === 'all' ? undefined : filters.status,
+          tags: activeFilters.tags,
+          status: 'unsolved', // Always only fetch unsolved problems
           ...tierMapping,
         };
 
         return problemApi.search({
           ...apiFilters,
           page: 0,
-          size: 50, // Fetch up to 50 problems per platform to build a good random pool
-        }).then(res => res.data.content).catch(err => {
-          console.error(`Failed to fetch for ${platform}`, err);
-          return [];
-        });
+          size: 50,
+        }).then(res => res.data.content).catch(err => []);
       });
 
       const results = await Promise.all(promises);
       const content = results.flat();
       
       setFetchedPool(content);
+      localStorage.setItem('cp_practice_pool', JSON.stringify(content));
       
-      // Instantly shuffle and pick 10
       const shuffled = shuffleArray(content).slice(0, 10);
       setDisplayedProblems(shuffled);
+      localStorage.setItem('cp_practice_displayed', JSON.stringify(shuffled));
       
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const { userApi } = await import('@/lib/api');
-          const meRes = await userApi.getMe();
-          if (meRes.data && meRes.data.solvedProblemIds) {
-            setSolvedProblemIds(new Set(meRes.data.solvedProblemIds));
-          }
-        } catch (e) {
-          console.error("Failed to fetch solved problems", e);
-        }
-      }
+      await fetchSolvedIds();
     } catch (error) {
       console.error('Failed to fetch problems:', error);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
   useEffect(() => {
-    fetchProblems();
-  }, [fetchProblems]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      let loadedFilters = { platforms: ['CODEFORCES'] as Platform[], tier: 2 as DifficultyTier, tags: [] as string[] };
+      let loadedDisplayed: Problem[] = [];
+      let loadedPool: Problem[] = [];
+      
+      try {
+        const savedFilters = localStorage.getItem('cp_practice_filters');
+        const savedDisplayed = localStorage.getItem('cp_practice_displayed');
+        const savedPool = localStorage.getItem('cp_practice_pool');
+
+        if (savedFilters) loadedFilters = JSON.parse(savedFilters);
+        if (savedDisplayed) loadedDisplayed = JSON.parse(savedDisplayed);
+        if (savedPool) loadedPool = JSON.parse(savedPool);
+      } catch (e) {}
+
+      setFilters(loadedFilters);
+      currentFilters.current = loadedFilters;
+
+      if (loadedDisplayed.length > 0) {
+        setDisplayedProblems(loadedDisplayed);
+        setFetchedPool(loadedPool);
+        
+        // Just refresh the solved statuses! Don't generate new problems.
+        fetchSolvedIds().then(() => setLoading(false));
+      } else {
+        fetchProblemsFromApi(loadedFilters);
+      }
+    } else {
+      // If filters changed, we fetch new problems
+      fetchProblemsFromApi(filters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   const updateFilters = (newFilters: Partial<typeof filters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters(prev => {
+      const next = { ...prev, ...newFilters };
+      localStorage.setItem('cp_practice_filters', JSON.stringify(next));
+      currentFilters.current = next;
+      return next;
+    });
   };
 
   const shuffleProblems = () => {
-    // If the pool is empty, maybe re-fetch or just do nothing
     if (fetchedPool.length > 0) {
       setLoading(true);
       setTimeout(() => {
         const shuffled = shuffleArray(fetchedPool).slice(0, 10);
         setDisplayedProblems(shuffled);
+        localStorage.setItem('cp_practice_displayed', JSON.stringify(shuffled));
         setLoading(false);
-      }, 400); // Small fake delay for UI effect
+      }, 400);
     } else {
-      fetchProblems();
+      fetchProblemsFromApi(currentFilters.current);
     }
   };
+
+
 
   return { 
     problems: displayedProblems, 
