@@ -117,7 +117,7 @@ export function ContestCalendar() {
                       onClick={() => setPastPage(pageNum)}
                       className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
                         pastPage === pageNum 
-                          ? 'bg-gradient-to-r from-slate-200 to-white text-white shadow-[0_0_10px_rgba(6,182,212,0.4)]' 
+                          ? 'bg-gradient-to-r from-slate-200 to-white text-slate-900 shadow-[0_0_10px_rgba(6,182,212,0.4)]' 
                           : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-primary)]'
                       }`}
                     >
@@ -144,15 +144,16 @@ export function ContestCalendar() {
   return (
     <div className="w-full">
       {/* Filters Header - Sleek Glassmorphism */}
-      <div className="mb-8 sticky top-[72px] z-40 bg-[var(--color-void)]/60 backdrop-blur-2xl pt-6 pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--color-border)] shadow-sm">
+      <div className="mb-8 pt-2">
         <PlatformFilter 
           selectedPlatforms={selectedPlatforms} 
           onToggle={togglePlatform} 
           onToggleAll={toggleAllPlatforms}
         />
         
-        {/* Tabs for Upcoming / Past & Attempted Filter */}
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-border)] pb-px">
+        {/* Tabs for Upcoming / Past & Attempted Filter (Sticky) */}
+        <div className="sticky top-[72px] z-40 bg-[var(--color-void)]/80 backdrop-blur-2xl mt-6 pt-4 pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--color-border)] shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-px">
           <div className="flex items-center gap-6">
             <button
               onClick={() => setActiveTab('live')}
@@ -218,6 +219,7 @@ export function ContestCalendar() {
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </div>
         
         {/* Stats bar */}
