@@ -329,13 +329,13 @@ export default function ProfilePage() {
                         {/* Unlink Button */}
                         <button 
                           onClick={(e) => handleUnlinkPlatform(p.platform, e)}
-                          className="absolute top-4 right-4 p-1.5 rounded-md bg-transparent hover:bg-red-500/10 text-[var(--color-text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
+                          className="absolute top-4 right-4 p-1.5 rounded-md bg-transparent hover:bg-red-500/10 text-[var(--color-text-muted)] hover:text-red-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all z-10"
                           title="Unlink Platform"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
 
-                        <div className="absolute top-4 right-12 p-1.5 rounded-md text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-all z-10">
+                        <div className="absolute top-4 right-12 p-1.5 rounded-md text-[var(--color-text-muted)] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all z-10">
                           <ExternalLink className="w-4 h-4" />
                         </div>
 
@@ -411,7 +411,7 @@ export default function ProfilePage() {
                     <button
                       type="submit"
                       disabled={isLinking}
-                      className="sm:w-32 py-3.5 bg-gradient-to-r from-slate-200 to-emerald-600 hover:from-slate-300 hover:to-white rounded-xl text-white text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="sm:w-32 py-3.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white text-sm font-bold tracking-wide transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-500"
                     >
                       {isLinking ? 'LINKING...' : 'CONNECT'}
                     </button>
