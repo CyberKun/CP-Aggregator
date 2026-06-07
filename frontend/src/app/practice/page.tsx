@@ -14,7 +14,7 @@ export default function PracticePage() {
   return (
     <AppShell>
       <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative">
+        <div className="flex flex-row items-center justify-between gap-6 relative">
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-slate-200 rounded-full mix-blend-screen filter blur-[100px] opacity-10 pointer-events-none"></div>
           
           <div className="relative z-10">
@@ -31,7 +31,7 @@ export default function PracticePage() {
             whileTap={{ scale: 0.95 }}
             onClick={shuffleProblems}
             disabled={loading}
-            className="group relative p-3.5 bg-[var(--color-void)] border border-slate-200/50 rounded-xl overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group relative w-12 h-12 shrink-0 bg-[var(--color-void)] border border-slate-200/50 rounded-xl overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="Shuffle Problems"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-slate-200/10 to-white/10 group-hover:opacity-100 transition-opacity" />
@@ -46,7 +46,7 @@ export default function PracticePage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 items-start relative z-10">
-          <div className="w-full lg:w-[280px] shrink-0 sticky top-[100px]">
+          <div className="w-full lg:w-[280px] shrink-0 lg:sticky lg:top-[100px] z-20">
             <ProblemFilterPanel filters={filters} updateFilters={updateFilters} />
           </div>
           
