@@ -144,15 +144,16 @@ export function ContestCalendar() {
   return (
     <div className="w-full">
       {/* Filters Header - Sleek Glassmorphism */}
-      <div className="mb-8 pt-2">
+      <div className="pt-2">
         <PlatformFilter 
           selectedPlatforms={selectedPlatforms} 
           onToggle={togglePlatform} 
           onToggleAll={toggleAllPlatforms}
         />
+      </div>
         
-        {/* Tabs for Upcoming / Past & Attempted Filter (Sticky) */}
-        <div className="sticky top-[72px] z-40 bg-[var(--color-void)]/80 backdrop-blur-2xl mt-6 pt-4 pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--color-border)] shadow-sm">
+      {/* Tabs for Upcoming / Past & Attempted Filter (Sticky) */}
+      <div className="sticky top-[72px] z-40 bg-[var(--color-void)]/80 backdrop-blur-2xl mt-6 pt-4 pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--color-border)] shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-px">
           <div className="flex items-center gap-6">
             <button
@@ -220,10 +221,10 @@ export function ContestCalendar() {
             )}
           </AnimatePresence>
           </div>
-        </div>
+      </div>
         
-        {/* Stats bar */}
-        <div className="flex items-center gap-6 mt-5 text-xs font-semibold text-[var(--color-text-secondary)]">
+      {/* Stats bar */}
+      <div className="flex items-center gap-6 mt-5 mb-8 text-xs font-semibold text-[var(--color-text-secondary)]">
           <span className="uppercase tracking-widest text-[10px]">Total {activeTab} Contests:</span>
           {PLATFORMS.map(p => {
             if (!selectedPlatforms.has(p.key)) return null;
@@ -236,7 +237,6 @@ export function ContestCalendar() {
               </div>
             );
           })}
-        </div>
       </div>
 
       {/* Sections */}
