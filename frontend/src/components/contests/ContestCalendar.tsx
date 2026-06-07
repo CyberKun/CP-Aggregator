@@ -197,7 +197,7 @@ export function ContestCalendar() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="flex items-center gap-1 bg-[var(--color-panel)] rounded-lg p-1.5 border border-[var(--color-border)]"
+                className="flex items-center gap-1 bg-[var(--color-panel)] rounded-lg p-1.5 border border-[var(--color-border)] mb-3"
               >
                 <button
                   onClick={() => { setAttemptedFilter('all'); setPastPage(0); }}
