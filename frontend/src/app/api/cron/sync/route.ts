@@ -15,17 +15,16 @@ export async function GET(req: NextRequest) {
 
     console.log('Starting sync...');
 
-    // Run all sync tasks in parallel
-    await Promise.allSettled([
-      syncCodeforcesContests(),
-      syncLeetCodeContests(),
-      syncAtCoderContests(),
-      syncCodeChefContests(),
-      syncCodeforcesProblems(),
-      syncLeetCodeProblems(),
-      syncAtCoderProblems(),
-      syncCodeChefProblems(),
-    ]);
+    // Run sync tasks sequentially to avoid Prisma connection pool exhaustion
+    await syncCodeforcesContests();
+    await syncLeetCodeContests();
+    await syncAtCoderContests();
+    await syncCodeChefContests();
+    
+    await syncCodeforcesProblems();
+    await syncLeetCodeProblems();
+    await syncAtCoderProblems();
+    await syncCodeChefProblems();
 
     console.log('Sync completed.');
     return NextResponse.json({ message: 'Sync completed successfully' });
@@ -43,10 +42,17 @@ async function syncCodeforcesContests() {
     if (data.status !== 'OK') return;
 
     const contests = data.result;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
     for (const c of contests) {
       // Codeforces returns startTimeSeconds
       const startTime = new Date(c.startTimeSeconds * 1000);
       const endTime = new Date((c.startTimeSeconds + c.durationSeconds) * 1000);
+      
+      // Skip old finished contests to save time and prevent timeout
+      if (c.phase === 'FINISHED' && endTime < thirtyDaysAgo) {
+        continue;
+      }
       
       let phase: ContestPhase = ContestPhase.BEFORE;
       if (c.phase === 'BEFORE') phase = ContestPhase.BEFORE;
@@ -94,6 +100,9 @@ async function syncLeetCodeContests() {
       const startTime = new Date(c.startTime * 1000);
       const endTime = new Date((c.startTime + c.duration) * 1000);
       const now = new Date();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      
+      if (endTime < thirtyDaysAgo) continue;
       
       let phase: ContestPhase = ContestPhase.BEFORE;
       if (now >= startTime && now <= endTime) phase = ContestPhase.CODING;
@@ -131,12 +140,14 @@ async function syncCodeforcesProblems() {
     const statistics = data.result.problemStatistics;
 
     // We might not want to insert 9000 problems sequentially as it's slow.
-    // Let's do it in chunks.
+    // Let's do it in chunks, only processing the newest 300 problems to prevent timeout.
     const chunkSize = 100;
-    for (let i = 0; i < problems.length; i += chunkSize) {
+    const maxProblems = Math.min(problems.length, 300);
+    for (let i = 0; i < maxProblems; i += chunkSize) {
       const chunk = problems.slice(i, i + chunkSize);
       
-      await Promise.all(chunk.map(async (p: any, idx: number) => {
+      for (const p of chunk) {
+        const idx = chunk.indexOf(p);
         const stat = statistics[i + idx];
         const externalId = `${p.contestId}${p.index}`;
         
@@ -158,7 +169,7 @@ async function syncCodeforcesProblems() {
             tags: p.tags || []
           }
         });
-      }));
+      }
     }
   } catch (err) {
     console.error('Error syncing Codeforces problems', err);
@@ -183,7 +194,8 @@ async function syncLeetCodeProblems() {
     let skip = 0;
     const limit = 100;
     
-    while (true) {
+    // Only fetch the newest 300 questions to prevent timeout
+    while (skip < 300) {
       const query = `
         query problemsetQuestionList {
           problemsetQuestionList: questionList(categorySlug: "", limit: ${limit}, skip: ${skip}, filters: {}) {
@@ -217,7 +229,7 @@ async function syncLeetCodeProblems() {
     for (let i = 0; i < allQuestions.length; i += chunkSize) {
       const chunk = allQuestions.slice(i, i + chunkSize);
       
-      await Promise.all(chunk.map(async (p: any) => {
+      for (const p of chunk) {
         const externalId = p.titleSlug;
         const difficulty = p.difficulty; // "Easy", "Medium", "Hard"
         const tags = p.topicTags ? p.topicTags.map((t: any) => t.slug) : [];
@@ -240,7 +252,7 @@ async function syncLeetCodeProblems() {
             tags
           }
         });
-      }));
+      }
     }
   } catch (err) {
     console.error('Error syncing LeetCode problems', err);
@@ -255,19 +267,19 @@ async function syncAtCoderContests() {
     if (!Array.isArray(contests)) return;
 
     const now = new Date();
-    const twoYearsAgo = new Date(now.getTime() - 2 * 365 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
-    // Only sync contests from the last 2 years + future ones
+    // Only sync contests from the last 30 days + future ones
     const recentContests = contests.filter((c: any) => {
-      const startTime = new Date(c.start_epoch_second * 1000);
-      return startTime >= twoYearsAgo;
+      const endTime = new Date((c.start_epoch_second + c.duration_second) * 1000);
+      return endTime >= thirtyDaysAgo;
     });
 
     const chunkSize = 50;
     for (let i = 0; i < recentContests.length; i += chunkSize) {
       const chunk = recentContests.slice(i, i + chunkSize);
       
-      await Promise.all(chunk.map(async (c: any) => {
+      for (const c of chunk) {
         const startTime = new Date(c.start_epoch_second * 1000);
         const endTime = new Date((c.start_epoch_second + c.duration_second) * 1000);
         
@@ -288,7 +300,7 @@ async function syncAtCoderContests() {
             phase,
           }
         });
-      }));
+      }
     }
     console.log(`Synced ${recentContests.length} AtCoder contests`);
   } catch (err) {
@@ -304,17 +316,22 @@ async function syncCodeChefContests() {
     if (data.status !== 'success') return;
 
     const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
     const allContests = [
       ...(data.present_contests || []),
       ...(data.future_contests || []),
       ...(data.past_contests || [])
-    ];
+    ].filter(c => {
+      const endTime = new Date(c.contest_end_date_iso);
+      return endTime >= thirtyDaysAgo;
+    });
 
     const chunkSize = 50;
     for (let i = 0; i < allContests.length; i += chunkSize) {
       const chunk = allContests.slice(i, i + chunkSize);
       
-      await Promise.all(chunk.map(async (c: any) => {
+      for (const c of chunk) {
         const startTime = new Date(c.contest_start_date_iso);
         const endTime = new Date(c.contest_end_date_iso);
         
@@ -335,7 +352,7 @@ async function syncCodeChefContests() {
             phase,
           }
         });
-      }));
+      }
     }
     console.log(`Synced ${allContests.length} CodeChef contests`);
   } catch (err) {
@@ -355,11 +372,15 @@ async function syncAtCoderProblems() {
     
     if (!Array.isArray(problems)) return;
 
+    // Kenkoooo problems are usually in contest chronological order, newer at the end.
+    // Let's just process the last 300 to prevent timeouts.
+    const recentProblems = problems.slice(-300);
+
     const chunkSize = 100;
-    for (let i = 0; i < problems.length; i += chunkSize) {
-      const chunk = problems.slice(i, i + chunkSize);
+    for (let i = 0; i < recentProblems.length; i += chunkSize) {
+      const chunk = recentProblems.slice(i, i + chunkSize);
       
-      await Promise.all(chunk.map(async (p: any) => {
+      for (const p of chunk) {
         const externalId = p.id;
         const model = models[externalId];
         const difficulty = model && model.difficulty !== undefined ? Math.round(model.difficulty) : null;
@@ -381,7 +402,7 @@ async function syncAtCoderProblems() {
             tags: []
           }
         });
-      }));
+      }
     }
   } catch (err) {
     console.error('Error syncing AtCoder problems', err);
@@ -391,9 +412,9 @@ async function syncAtCoderProblems() {
 // ---- CODECHEF PROBLEMS ----
 async function syncCodeChefProblems() {
   try {
-    // CodeChef API limits to max 100 limit originally, but it accepts larger limits
-    for (let page = 1; page <= 2; page++) {
-      const res = await fetch(`https://www.codechef.com/api/list/problems?page=${page}&limit=5000`);
+    // Limit to max 300 latest problems to prevent timeouts
+    for (let page = 1; page <= 1; page++) {
+      const res = await fetch(`https://www.codechef.com/api/list/problems?page=${page}&limit=300`);
       const data = await res.json();
       
       if (data.status !== 'success' || !data.data || data.data.length === 0) continue;
@@ -404,7 +425,7 @@ async function syncCodeChefProblems() {
       for (let i = 0; i < problems.length; i += chunkSize) {
         const chunk = problems.slice(i, i + chunkSize);
         
-        await Promise.all(chunk.map(async (p: any) => {
+        for (const p of chunk) {
           const externalId = p.code;
           const rating = parseInt(p.difficulty_rating);
           const validRating = (isNaN(rating) || rating === -1) ? null : rating;
@@ -426,7 +447,7 @@ async function syncCodeChefProblems() {
               tags: []
             }
           });
-        }));
+        }
       }
     }
   } catch (err) {
