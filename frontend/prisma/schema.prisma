@@ -32,6 +32,7 @@ model User {
   platforms        UserPlatform[]
   solvedProblems   UserSolvedProblem[]
   attemptedContests UserAttemptedContest[]
+  pushSubscriptions PushSubscription[]
 }
 
 model UserPlatform {
@@ -101,3 +102,14 @@ model UserAttemptedContest {
 
   @@unique([userId, contestId])
 }
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String?  // Optional, so guests can subscribe too
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+

@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 
 
 
+import PushNotificationPrompt from "@/components/ui/PushNotificationPrompt";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,7 +34,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col overflow-x-hidden w-full bg-[var(--color-void)] text-[var(--color-text-primary)]">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <PushNotificationPrompt />
+        </AuthProvider>
       </body>
     </html>
   );
