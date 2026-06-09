@@ -42,15 +42,16 @@ async function syncCodeforcesContests() {
     if (data.status !== 'OK') return;
 
     const contests = data.result;
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
     
     for (const c of contests) {
       // Codeforces returns startTimeSeconds
       const startTime = new Date(c.startTimeSeconds * 1000);
       const endTime = new Date((c.startTimeSeconds + c.durationSeconds) * 1000);
       
-      // Skip old finished contests to save time and prevent timeout
-      if (c.phase === 'FINISHED' && endTime < thirtyDaysAgo) {
+      // Skip old finished contests to save time and prevent timeout.
+      // Only sync upcoming, live, and contests that finished within the last 3 days.
+      if (c.phase === 'FINISHED' && endTime < threeDaysAgo) {
         continue;
       }
       
@@ -100,9 +101,9 @@ async function syncLeetCodeContests() {
       const startTime = new Date(c.startTime * 1000);
       const endTime = new Date((c.startTime + c.duration) * 1000);
       const now = new Date();
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
       
-      if (endTime < thirtyDaysAgo) continue;
+      if (endTime < threeDaysAgo) continue;
       
       let phase: ContestPhase = ContestPhase.BEFORE;
       if (now >= startTime && now <= endTime) phase = ContestPhase.CODING;
@@ -267,12 +268,12 @@ async function syncAtCoderContests() {
     if (!Array.isArray(contests)) return;
 
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
     
-    // Only sync contests from the last 30 days + future ones
+    // Only sync contests from the last 3 days + future ones
     const recentContests = contests.filter((c: any) => {
       const endTime = new Date((c.start_epoch_second + c.duration_second) * 1000);
-      return endTime >= thirtyDaysAgo;
+      return endTime >= threeDaysAgo;
     });
 
     const chunkSize = 50;
@@ -316,7 +317,7 @@ async function syncCodeChefContests() {
     if (data.status !== 'success') return;
 
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
     
     const allContests = [
       ...(data.present_contests || []),
@@ -324,7 +325,7 @@ async function syncCodeChefContests() {
       ...(data.past_contests || [])
     ].filter(c => {
       const endTime = new Date(c.contest_end_date_iso);
-      return endTime >= thirtyDaysAgo;
+      return endTime >= threeDaysAgo;
     });
 
     const chunkSize = 50;
