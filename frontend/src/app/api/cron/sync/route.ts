@@ -271,7 +271,9 @@ async function syncAtCoderContests() {
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
     
     // Only sync contests from the last 3 days + future ones
+    // Filter out permanent/long-running practice contests (duration > 30 days)
     const recentContests = contests.filter((c: any) => {
+      if (c.duration_second > 30 * 24 * 60 * 60) return false;
       const endTime = new Date((c.start_epoch_second + c.duration_second) * 1000);
       return endTime >= threeDaysAgo;
     });
