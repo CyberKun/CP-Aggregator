@@ -23,15 +23,31 @@ export default function PushNotificationPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
-    // Only show if supported and not already granted/denied
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       if (Notification.permission === 'default') {
-        // Maybe delay showing it by a few seconds so it's not instantly annoying
         const timer = setTimeout(() => setShowPrompt(true), 5000);
         return () => clearTimeout(timer);
       } else if (Notification.permission === 'granted') {
-        // Make sure the service worker is registered if permission was already granted
-        navigator.serviceWorker.register('/sw.js').catch(console.error);
+        // Ensure service worker is registered and we have an active subscription synced with the backend
+        navigator.serviceWorker.register('/sw.js').then(async (registration) => {
+          const subscription = await registration.pushManager.getSubscription();
+          const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+          
+          if (publicVapidKey) {
+            const activeSub = subscription || await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+            });
+            
+            // Always sync the subscription with the backend in case the DB was wiped
+            // or if it failed to save the very first time.
+            await fetch('/api/push/subscribe', {
+              method: 'POST',
+              body: JSON.stringify({ subscription: activeSub }),
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        }).catch(console.error);
       }
     }
   }, []);
