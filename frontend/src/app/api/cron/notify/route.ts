@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import webpush from 'web-push';
 
+export const dynamic = 'force-dynamic';
+
 webpush.setVapidDetails(
   'mailto:support@cptimes.app',
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY as string,
