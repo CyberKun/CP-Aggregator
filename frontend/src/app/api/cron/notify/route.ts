@@ -26,18 +26,33 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const twentyFiveMinsFromNow = new Date(now.getTime() + 25 * 60 * 1000);
     const thirtyFiveMinsFromNow = new Date(now.getTime() + 35 * 60 * 1000);
+    const testMode = url.searchParams.get('test') === 'true';
 
     const upcomingContests = await prisma.contest.findMany({
-      where: {
+      where: testMode ? undefined : {
         startTime: {
           gte: twentyFiveMinsFromNow,
           lte: thirtyFiveMinsFromNow,
         },
       },
+      take: testMode ? 1 : undefined
     });
 
     if (upcomingContests.length === 0) {
-      return NextResponse.json({ message: 'No contests starting in ~30 mins' });
+      if (testMode) {
+        upcomingContests.push({
+          id: 'test',
+          name: 'Test Force Notification',
+          platform: 'CODEFORCES',
+          url: 'https://cp-cave.vercel.app',
+          startTime: new Date(),
+          endTime: new Date(),
+          externalId: 'test',
+          phase: 'BEFORE'
+        } as any);
+      } else {
+        return NextResponse.json({ message: 'No contests starting in ~30 mins' });
+      }
     }
 
     const subscriptions = await prisma.pushSubscription.findMany();
