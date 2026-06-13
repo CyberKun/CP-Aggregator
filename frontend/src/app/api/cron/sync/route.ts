@@ -2,14 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Platform, ContestPhase } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorization');
     const url = new URL(req.url);
     const secret = url.searchParams.get('secret');
     
     // Protect the cron route with a simple secret (you can define CRON_SECRET in .env)
     const expectedSecret = process.env.CRON_SECRET || 'cp-aggregator-cron-secret';
-    if (secret !== expectedSecret) {
+    if (
+      authHeader !== `Bearer ${expectedSecret}` &&
+      secret !== expectedSecret &&
+      process.env.NODE_ENV === 'production'
+    ) {
       return NextResponse.json({ message: 'Unauthorized cron request' }, { status: 401 });
     }
 
