@@ -4,6 +4,29 @@ import { Platform, ContestPhase } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+// Retry wrapper: retries a function up to `maxRetries` times with exponential backoff
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+  maxRetries = 2,
+  delayMs = 2000
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt < maxRetries) {
+        console.warn(`[${label}] Attempt ${attempt + 1} failed, retrying in ${delayMs}ms...`, err);
+        await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+      } else {
+        console.error(`[${label}] All ${maxRetries + 1} attempts failed.`, err);
+        throw err;
+      }
+    }
+  }
+  throw new Error(`[${label}] Unreachable`);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
@@ -21,20 +44,30 @@ export async function GET(req: NextRequest) {
     }
 
     console.log('Starting sync...');
+    const results: Record<string, string> = {};
 
     // Run sync tasks sequentially to avoid Prisma connection pool exhaustion
-    await syncCodeforcesContests();
-    await syncLeetCodeContests();
-    await syncAtCoderContests();
-    await syncCodeChefContests();
-    
-    await syncCodeforcesProblems();
-    await syncLeetCodeProblems();
-    await syncAtCoderProblems();
-    await syncCodeChefProblems();
+    // Each task has retry logic so transient API failures don't break the whole sync
+    for (const [name, fn] of [
+      ['Codeforces Contests', syncCodeforcesContests],
+      ['LeetCode Contests', syncLeetCodeContests],
+      ['AtCoder Contests', syncAtCoderContests],
+      ['CodeChef Contests', syncCodeChefContests],
+      ['Codeforces Problems', syncCodeforcesProblems],
+      ['LeetCode Problems', syncLeetCodeProblems],
+      ['AtCoder Problems', syncAtCoderProblems],
+      ['CodeChef Problems', syncCodeChefProblems],
+    ] as const) {
+      try {
+        await withRetry(fn as () => Promise<void>, name);
+        results[name] = 'OK';
+      } catch {
+        results[name] = 'FAILED';
+      }
+    }
 
-    console.log('Sync completed.');
-    return NextResponse.json({ message: 'Sync completed successfully' });
+    console.log('Sync completed.', results);
+    return NextResponse.json({ message: 'Sync completed', results });
   } catch (error) {
     console.error('Cron sync error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
